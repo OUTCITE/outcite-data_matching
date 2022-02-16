@@ -254,13 +254,14 @@ def find(refobjects,client,index,field,search_body_title,search_body_refstring,g
         if ID != None:
             refobjects[i][field[:-1]] = ID;
             ids.append(ID);
+            print(refobjects[i]);
     return set(ids), refobjects;
 
 def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,recheck):
     #----------------------------------------------------------------------------------------------------------------------------------
-    ref_fields            = ['id'] + [transformap[key][0].split('.')[0] for key in transformap]+[field];
-    match_fields          = ['id'] + list(transformap.keys());
-    body                  = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'has_'+field: True, field: None, 'refobjects': None } } };
+    ref_fields            = ['id'] + [transformap[key][0].split('.')[0] for key in transformap] + [field[:-1]];
+    match_fields          = [id_field] + list(transformap.keys());
+    body                  = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'has_'+field: True, field: None } } };
     search_body_title     = { 'query': { 'match_phrase': { 'title': None } }, '_source':match_fields };
     search_body_refstring = { 'query': { 'multi_match':  { 'query': None,     'fields': query_fields } } };
     scr_body              = { "query": { "ids": { "values": _ids } } } if _ids else {'query':{'bool':{'must':{'term':{'has_'+field: False}}}}} if not recheck else {'query':{'match_all':{}}};
@@ -278,14 +279,15 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
             body['_id'] = doc['_id'];
             ids         = set(doc['_source'][field]) if field in doc['_source'] and doc['_source'][field] != None else set([]);
             for refobj in _refobjs:
-                previous_refobjects            = [{ ref_field: ref[ref_field] for ref_field in ref_fields if ref_field in ref } for ref in doc['_source'][refobj]] if refobj in doc['_source'] and doc['_source'][refobj] else None;
+                #previous_refobjects            = [{ ref_field: ref[ref_field] for ref_field in ref_fields if ref_field in ref } for ref in doc['_source'][refobj]] if refobj in doc['_source'] and doc['_source'][refobj] else None;
+                previous_refobjects            = doc['_source'][refobj] if refobj in doc['_source'] and doc['_source'][refobj] else None;
                 new_ids, new_refobjects        = find(previous_refobjects,client_m,index_m,field,search_body_title,search_body_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field) if isinstance(previous_refobjects,list) else (set([]),previous_refobjects);
                 ids                           |= new_ids;
                 body['_source']['doc'][refobj] = new_refobjects; # The updated ones
                 print('-->',refobj,'gave',['','no '][len(new_ids)==0]+'ids',', '.join(new_ids),'\n');
             print('------------------------------------------------\n-- overall ids --------------------------------\n'+', '.join(ids)+'\n------------------------------------------------');
             body['_source']['doc'][field]        = list(ids) if len(ids) > 0 else None;
-            body['_source']['doc']['has_'+field] = True       if len(ids) > 0 else False;
+            body['_source']['doc']['has_'+field] = True      if len(ids) > 0 else False;
             yield body;
         scroll_tries = 0;
         while scroll_tries < _max_scroll_tries:

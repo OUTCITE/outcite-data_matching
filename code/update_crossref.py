@@ -10,9 +10,6 @@ from common import *
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 _index            = sys.argv[1]; #'geocite' #'ssoar'
 _chunk_size       = 200;
-_max_extract_time = 0.1; #minutes
-_max_scroll_tries = 2;
-_scroll_size      = 100;
 _requestimeout    =  60;
 
 _great_score  = [100,50]; # [full reference, title]
