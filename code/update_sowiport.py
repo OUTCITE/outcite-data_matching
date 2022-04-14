@@ -8,7 +8,7 @@ from elasticsearch.helpers import streaming_bulk as bulk
 from common import *
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
-_index            = sys.argv[1]; #'geocite' #'ssoar'
+_index            = sys.argv[1]; #'geocite' #'outcite_ssoar' #'ssoar_gold'
 _chunk_size       = 200;
 _max_extract_time = 0.1; #minutes
 _max_scroll_tries = 2;

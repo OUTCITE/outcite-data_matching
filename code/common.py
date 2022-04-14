@@ -4,21 +4,22 @@ from difflib import SequenceMatcher as SM
 from copy import deepcopy as copy
 from elasticsearch import Elasticsearch as ES
 import re
+import time
 
-_max_extract_time = 0.1; #minutes
+_max_extract_time = 10; #minutes
 _max_scroll_tries = 2;
 _scroll_size      = 100;
+
+_max_val_len = 512;
 #'''
 _refobjs = [    'anystyle_references_from_cermine_fulltext',
                 'anystyle_references_from_cermine_refstrings',
                 'anystyle_references_from_grobid_fulltext',
-                'anystyle_references_from_grobid_refstrings',
-                'anystyle_references_from_gold_fulltext',
-                'anystyle_references_from_gold_refstrings',
-                'cermine_references_from_cermine_xml',
-                'cermine_references_from_grobid_refstrings',
-                'cermine_references_from_gold_refstrings',
-                'grobid_references_from_grobid_xml' ];
+                #'anystyle_references_from_grobid_refstrings',   #                'anystyle_references_from_gold_fulltext',
+                'cermine_references_from_cermine_xml',          #                'anystyle_references_from_gold_refstrings',
+                'cermine_references_from_grobid_refstrings'#,    #                'cermine_references_from_gold_refstrings',
+                #'grobid_references_from_grobid_xml'
+                ];
 
 _ids     = None;#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar-55603","gesis-ssoar-37157","gesis-ssoar-5917","gesis-ssoar-21970"];#None
 #'''
@@ -210,7 +211,7 @@ def get_best_match(refobj,results,great_score,ok_score,thr_prec,max_rel_diff,thr
     print('================================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj]));
     print('================================================================================\n'+'\n'.join([key+':    '+str(refobj[key])   for key in refobj  ])+'\n================================================================================');
     prec, rec, tp, p, t, matches, mismatches, mapping, costs = compare_refobject(matchobj,refobj,threshold);
-    matchprec                                                = len(matches)/(len(matches)+len(mismatches));
+    matchprec                                                = len(matches)/(len(matches)+len(mismatches)) if len(matches)+len(mismatches) > 0 else 0;
     if len(matches)+len(mismatches) > 0:
         print('Matchprec:',matchprec,'Precision:',prec,'Recall:',rec,'\n___________________________________');
         print('Matches:   ',matches);
@@ -241,10 +242,10 @@ def find(refobjects,client,index,field,search_body_title,search_body_refstring,g
         body = None;
         if 'title' in refobjects[i]:
             body                                   = copy(search_body_title);
-            body['query']['match_phrase']['title'] = refobjects[i]['title'];
+            body['query']['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len];
         elif 'reference' in refobjects[i]:
             body                                  = copy(search_body_refstring);
-            body['query']['multi_match']['query'] = refobjects[i]['reference'];
+            body['query']['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
         else:
             print('Neither title nor reference in refobject!');
             continue;
@@ -264,13 +265,15 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
     body                  = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'has_'+field: True, field: None } } };
     search_body_title     = { 'query': { 'match_phrase': { 'title': None } }, '_source':match_fields };
     search_body_refstring = { 'query': { 'multi_match':  { 'query': None,     'fields': query_fields } } };
-    scr_body              = { "query": { "ids": { "values": _ids } } } if _ids else {'query':{'bool':{'must':{'term':{'has_'+field: False}}}}} if not recheck else {'query':{'match_all':{}}};
+    scr_body              = { "query": { "ids": { "values": _ids } } } if _ids else {'query':{'bool':{'must_not':{'term':{'has_'+field: True}}}}} if not recheck else {'query':{'match_all':{}}};
     #----------------------------------------------------------------------------------------------------------------------------------
+    print('------------------->',scr_body);
     client   = ES(['localhost'],scheme='http',port=9200,timeout=60);
     client_m = ES(['localhost'],scheme='http',port=9200,timeout=60);
     page     = client.search(index=index,scroll=str(int(_max_extract_time*_scroll_size))+'m',size=_scroll_size,body=scr_body);
     sid      = page['_scroll_id'];
     returned = len(page['hits']['hits']);
+    print('------------------->',page['hits']['total']);
     page_num = 0;
     while returned > 0:
         for doc in page['hits']['hits']:
@@ -286,8 +289,8 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 body['_source']['doc'][refobj] = new_refobjects; # The updated ones
                 print('-->',refobj,'gave',['','no '][len(new_ids)==0]+'ids',', '.join(new_ids),'\n');
             print('------------------------------------------------\n-- overall ids --------------------------------\n'+', '.join(ids)+'\n------------------------------------------------');
-            body['_source']['doc'][field]        = list(ids) if len(ids) > 0 else None;
-            body['_source']['doc']['has_'+field] = True      if len(ids) > 0 else False;
+            body['_source']['doc'][field]        = list(ids) #if len(ids) > 0 else None;
+            body['_source']['doc']['has_'+field] = True      #if len(ids) > 0 else False;
             yield body;
         scroll_tries = 0;
         while scroll_tries < _max_scroll_tries:
@@ -296,7 +299,7 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 returned  = len(page['hits']['hits']);
                 page_num += 1;
             except Exception as e:
-                print(e);
+                print(e, file=sys.stderr);
                 print('\n[!]-----> Some problem occured while scrolling. Sleeping for 3s and retrying...\n');
                 returned      = 0;
                 scroll_tries += 1;
