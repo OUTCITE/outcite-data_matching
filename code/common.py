@@ -5,6 +5,7 @@ from copy import deepcopy as copy
 from elasticsearch import Elasticsearch as ES
 import re
 import time
+import sys
 
 _max_extract_time = 10; #minutes
 _max_scroll_tries = 2;
@@ -15,10 +16,10 @@ _max_val_len = 512;
 _refobjs = [    'anystyle_references_from_cermine_fulltext',
                 'anystyle_references_from_cermine_refstrings',
                 'anystyle_references_from_grobid_fulltext',
-                #'anystyle_references_from_grobid_refstrings',   #                'anystyle_references_from_gold_fulltext',
-                'cermine_references_from_cermine_xml',          #                'anystyle_references_from_gold_refstrings',
-                'cermine_references_from_grobid_refstrings'#,    #                'cermine_references_from_gold_refstrings',
-                #'grobid_references_from_grobid_xml'
+                'anystyle_references_from_grobid_refstrings',   #                'anystyle_references_from_gold_fulltext',
+                'cermine_references_from_cermine_refstrings',          #                'anystyle_references_from_gold_refstrings',
+                'cermine_references_from_grobid_refstrings',#,    #                'cermine_references_from_gold_refstrings',
+                'grobid_references_from_grobid_xml'
                 ];
 
 _ids     = None;#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar-55603","gesis-ssoar-37157","gesis-ssoar-5917","gesis-ssoar-21970"];#None
@@ -240,10 +241,10 @@ def find(refobjects,client,index,field,search_body_title,search_body_refstring,g
     for i in range(len(refobjects)):
         ID   = None;
         body = None;
-        if 'title' in refobjects[i]:
+        if 'title' in refobjects[i] and refobjects[i]['title']:
             body                                   = copy(search_body_title);
             body['query']['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len];
-        elif 'reference' in refobjects[i]:
+        elif 'reference' in refobjects[i] and refobjects[i]['reference']:
             body                                  = copy(search_body_refstring);
             body['query']['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
         else:
@@ -305,3 +306,4 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 scroll_tries += 1;
                 time.sleep(3); continue;
             break;
+    client.clear_scroll(scroll_id=sid);
