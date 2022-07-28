@@ -21,7 +21,7 @@ _max_rel_diff = [0.5,0.5];
 _threshold    = 0.6; #relative difference to largest string, 0 if identical, 1 if no overlap at all
 _thr_prec     = 0.6;
 
-_recheck = True;
+_recheck = False;
 
 #====================================================================================
 _index_m    = 'openalex';
