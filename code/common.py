@@ -253,7 +253,7 @@ def find(refobjects,client,index,field,query_title,query_refstring,fields,great_
         else:
             print('Neither title nor reference in refobject!');
             continue;
-        results       = client.search(index=index,query=query,_source=fields,size=10)['hits']['hits'];
+        results       = client.search(index=index,query=query,_source=fields)['hits']['hits'];
         results       = [(result['_source'],result['_score'],) for result in results];
         ID, match_obj = get_best_match(refobjects[i],results,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field);
         if ID != None:
