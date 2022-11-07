@@ -9,18 +9,25 @@ from common import *
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 _index            = sys.argv[1]; #'geocite' #'outcite_ssoar' #'ssoar_gold'
-_chunk_size       = 200;
-_max_scroll_tries = 2;
-_scroll_size      = 100;
-_requestimeout    =  60;
 
-_great_score  = [100,50]; # [full reference, title]
-_ok_score     = [36,18];
-_max_rel_diff = [0.5,0.5];
-_threshold    = 0.6; #relative difference to largest string, 0 if identical, 1 if no overlap at all
-_thr_prec     = 0.6;
+IN = None;
+try:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
+except:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs.json');
+_configs = json.load(IN);
+IN.close();
 
-_recheck = False;
+_chunk_size       = _configs['chunk_size_sowiport'];
+_requestimeout    = _configs['requestimeout_sowiport'];
+
+_great_score  = _configs['great_score_sowiport'];
+_ok_score     = _configs['ok_score_sowiport'];
+_max_rel_diff = _configs['max_rel_diff_sowiport'];
+_threshold    = _configs['threshold_sowiport'];
+_thr_prec     = _configs['thr_prec_sowiport'];
+
+_recheck = _configs['recheck_sowiport'];
 
 #====================================================================================
 _index_m    = 'sowiport';

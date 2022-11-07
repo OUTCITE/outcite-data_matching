@@ -9,19 +9,25 @@ from common import *
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 _index            = sys.argv[1]; #'geocite' #'ssoar'
-_chunk_size       = 200;
 
-_max_scroll_tries = 2;
-_scroll_size      = 100;
-_requestimeout    =  60;
+IN = None;
+try:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
+except:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs.json');
+_configs = json.load(IN);
+IN.close();
 
-_great_score  = [100,50]; # [full reference, title]
-_ok_score     = [36,18];
-_max_rel_diff = [0.5,0.5];
-_threshold    = 0.6; #relative difference to largest string, 0 if identical, 1 if no overlap at all
-_thr_prec     = 0.6;
+_chunk_size       = _configs['chunk_size_dnb'];
+_requestimeout    = _configs['requestimeout_dnb'];
 
-_recheck = False;
+_great_score  = _configs['great_score_dnb'];
+_ok_score     = _configs['ok_score_dnb'];
+_max_rel_diff = _configs['max_rel_diff_dnb'];
+_threshold    = _configs['threshold_dnb'];
+_thr_prec     = _configs['thr_prec_dnb'];
+
+_recheck = _configs['recheck_dnb'];
 
 #====================================================================================
 _index_m    = 'dnb';

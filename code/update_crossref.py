@@ -9,16 +9,25 @@ from common import *
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 _index            = sys.argv[1]; #'geocite' #'ssoar'
-_chunk_size       = 200;
-_requestimeout    =  60;
 
-_great_score  = [100,50]; # [full reference, title]
-_ok_score     = [36,18];
-_max_rel_diff = [0.5,0.5];
-_threshold    = 0.6; #relative difference to largest string, 0 if identical, 1 if no overlap at all
-_thr_prec     = 0.6;
+IN = None;
+try:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
+except:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs.json');
+_configs = json.load(IN);
+IN.close();
 
-_recheck = False;
+_chunk_size       = _configs['chunk_size_crossref'];
+_requestimeout    = _configs['requestimeout_crossref'];
+
+_great_score  = _configs['great_score_crossref'];
+_ok_score     = _configs['ok_score_crossref'];
+_max_rel_diff = _configs['max_rel_diff_crossref'];
+_threshold    = _configs['threshold_crossref'];
+_thr_prec     = _configs['thr_prec_crossref'];
+
+_recheck = _configs['recheck_crossref'];
 
 #====================================================================================
 _index_m    = 'crossref';

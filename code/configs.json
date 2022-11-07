@@ -1,0 +1,57 @@
+{
+    "max_scroll_tries":  2,
+    "scroll_size":     100,
+    "max_extract_time": 10,
+    "max_val_len":     512,
+
+    "refobjs": [ "anystyle_references_from_cermine_fulltext",
+                 "anystyle_references_from_cermine_refstrings",
+                 "anystyle_references_from_grobid_fulltext",
+                 "anystyle_references_from_grobid_refstrings",
+                 "cermine_references_from_cermine_refstrings",
+                 "cermine_references_from_grobid_refstrings",
+                 "grobid_references_from_grobid_xml",
+                 "exparser_references_from_cermine_layout" ],
+
+    "ids": null,
+
+    "chunk_size_sowiport": 200,
+    "chunk_size_crossref": 200,
+    "chunk_size_dnb":      200,
+    "chunk_size_openalex": 200,
+
+    "requestimeout_sowiport":  60,
+    "requestimeout_crossref":  60,
+    "requestimeout_dnb":       60,
+    "requestimeout_openalex":  60,
+
+    "great_score_sowiport": [100,50],
+    "great_score_crossref": [100,50],
+    "great_score_dnb":      [100,50],
+    "great_score_openalex": [100,50],
+
+    "ok_score_sowiport": [36,18],
+    "ok_score_crossref": [36,18],
+    "ok_score_dnb":      [36,18],
+    "ok_score_openalex": [36,18],
+
+    "max_rel_diff_sowiport": [0.5,0.5],
+    "max_rel_diff_crossref": [0.5,0.5],
+    "max_rel_diff_dnb":      [0.5,0.5],
+    "max_rel_diff_openalex": [0.5,0.5],
+
+    "threshold_sowiport": 0.6,
+    "threshold_crossref": 0.6,
+    "threshold_dnb":      0.6,
+    "threshold_openalex": 0.6,
+
+    "thr_prec_sowiport": 0.6,
+    "thr_prec_crossref": 0.6,
+    "thr_prec_dnb":      0.6,
+    "thr_prec_openalex": 0.6,
+
+    "recheck_sowiport": false,
+    "recheck_crossref": false,
+    "recheck_dnb":      false,
+    "recheck_openalex": false,
+}
