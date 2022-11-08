@@ -53,5 +53,5 @@
     "recheck_sowiport": false,
     "recheck_crossref": false,
     "recheck_dnb":      false,
-    "recheck_openalex": false,
+    "recheck_openalex": false
 }
