@@ -269,10 +269,10 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
     #----------------------------------------------------------------------------------------------------------------------------------
     ref_fields      = ['id'] + [transformap[key][0].split('.')[0] for key in transformap] + [field[:-1]];
     match_fields    = [id_field] + list(transformap.keys());
-    body            = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'has_'+field: True, field: None } } };
+    body            = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'processed_'+field: True, field: None } } };
     query_title     = { 'match_phrase': { 'title': None } };
     query_refstring = { 'multi_match':  { 'query': None,     'fields': query_fields } };
-    scr_query       = { "ids": { "values": _ids } } if _ids else {'bool':{'must_not':{'term':{'has_'+field: True}}}} if not recheck else {'match_all':{}};
+    scr_query       = { "ids": { "values": _ids } } if _ids else {'bool':{'must_not':{'term':{'processed_'+field: True}}}} if not recheck else {'match_all':{}};
     #----------------------------------------------------------------------------------------------------------------------------------
     print('------------------->',scr_query);
     client   = ES(['localhost'],scheme='http',port=9200,timeout=60);
