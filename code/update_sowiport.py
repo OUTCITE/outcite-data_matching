@@ -6,10 +6,11 @@ from copy import deepcopy as copy
 from elasticsearch import Elasticsearch as ES
 from elasticsearch.helpers import streaming_bulk as bulk
 from common import *
+#from pathlib import Path
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 _index            = sys.argv[1]; #'geocite' #'outcite_ssoar' #'ssoar_gold'
-
+'''
 IN = None;
 try:
     IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
@@ -17,7 +18,7 @@ except:
     IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs.json');
 _configs = json.load(IN);
 IN.close();
-
+'''
 _chunk_size       = _configs['chunk_size_sowiport'];
 _requestimeout    = _configs['requestimeout_sowiport'];
 

@@ -6,6 +6,15 @@ from elasticsearch import Elasticsearch as ES
 import re
 import time
 import sys
+from pathlib import Path
+
+IN = None;
+try:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
+except:
+    IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs.json');
+_configs = json.load(IN);
+IN.close();
 
 _max_extract_time = _configs["max_extract_time"];
 _max_scroll_tries = _configs["max_scroll_tries"];
