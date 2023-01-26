@@ -20,7 +20,7 @@ _configs = json.load(IN);
 IN.close();
 
 _chunk_size       = _configs['chunk_size_crossref'];
-_requestimeout    = _configs['requestimeout_crossref'];
+_request_timeout  = _configs['requestimeout_crossref'];
 
 _great_score  = _configs['great_score_crossref'];
 _ok_score     = _configs['ok_score_crossref'];
@@ -49,7 +49,7 @@ _query_fields = ['title','author','publisher'];
 _client = ES(['localhost'],scheme='http',port=9200,timeout=60);
 
 i = 0;
-for success, info in bulk(_client,search(_to_field,_from_field,_query_fields,_index,_index_m,_great_score,_ok_score,_thr_prec,_max_rel_diff,_threshold,_transformap,_recheck),chunk_size=_chunk_size, request_timeout=_requestimeout):
+for success, info in bulk(_client,search(_to_field,_from_field,_query_fields,_index,_index_m,_great_score,_ok_score,_thr_prec,_max_rel_diff,_threshold,_transformap,_recheck),chunk_size=_chunk_size, request_timeout=_request_timeout):
     i += 1;
     if not success:
         print('\n[!]-----> A document failed:', info['index']['_id'], info['index']['error'],'\n');
