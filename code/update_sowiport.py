@@ -41,7 +41,7 @@ _transformap = { 'title':           ['title',                       False, None]
                  'coreEditor':      ['editors.editor_string',       False, []  ],
                  'coreAuthor':      ['authors.author_string',       False, []  ] };
 
-_query_fields = ['title','author','coreJournalTitle','institutions','corePublisher'];
+_query_fields = ['title','coreAuthor','coreJournalTitle','institutions','corePublisher'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------

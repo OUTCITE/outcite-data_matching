@@ -9,7 +9,7 @@ from common import *
 from pathlib import Path
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
-_index            = sys.argv[1]; #'geocite' #'ssoar'
+_index = sys.argv[1]; #'geocite' #'ssoar'
 
 IN = None;
 try:
@@ -19,30 +19,31 @@ except:
 _configs = json.load(IN);
 IN.close();
 
-_chunk_size       = _configs['chunk_size_openalex'];
-_request_timeout  = _configs['requestimeout_openalex'];
+_chunk_size       = _configs['chunk_size_arxiv'];
+_request_timeout  = _configs['requestimeout_arxiv'];
 
-_great_score  = _configs['great_score_openalex'];
-_ok_score     = _configs['ok_score_openalex'];
-_max_rel_diff = _configs['max_rel_diff_openalex'];
-_threshold    = _configs['threshold_openalex'];
-_thr_prec     = _configs['thr_prec_openalex'];
+_great_score  = _configs['great_score_arxiv'];
+_ok_score     = _configs['ok_score_arxiv'];
+_max_rel_diff = _configs['max_rel_diff_arxiv'];
+_threshold    = _configs['threshold_arxiv'];
+_thr_prec     = _configs['thr_prec_arxiv'];
 
-_recheck = _configs['recheck_openalex'];
+_recheck = _configs['recheck_arxiv'];
 
 #====================================================================================
-_index_m    = 'openalex';
+_index_m    = 'arxiv';
 _from_field = 'id';
-_to_field   = 'openalex_ids';
+_to_field   = 'arxiv_ids';
 
 _transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'publication_year':                ['year',                        True,  None],
-                 'host_venue.publisher':            ['publishers.publisher_string', False, None],
-                 'host_venue.display_name':         ['source',                      True,  None],
-                 'authorships.author.display_name': ['authors.author_string',       False, []  ],
-                 'doi':                             ['doi',                         False, None],};
+                 #'update_date':                     ['year',                        False, None],
+                 'authors_parsed.author_string':    ['authors.author_string',       False, []  ],
+                 #'authors_parsed.surnames':         ['authors.surname',             False, []  ],
+                 #'authors_parsed.initials':         ['authors.initials',            False, []  ],
+                 #'authors_parsed.firstnames':       ['authors.firstnames',          False, []  ],
+                 'doi':                             ['doi',                         True, None],};
 
-_query_fields = ['title','authorships.author.display_name','host_venue','doi'];
+_query_fields = ['title','authors_parsed.author_string','doi'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------

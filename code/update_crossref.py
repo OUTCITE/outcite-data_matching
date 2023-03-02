@@ -39,9 +39,10 @@ _transformap = { 'title':                       ['title',                       
                  'published-print.date-parts':  ['year',                        True,  None],
                  'publisher':                   ['publishers.publisher_string', False, []  ],
                  'author.given':                ['authors.firstnames',          False, []  ],
-                 'author.family':               ['authors.surname',             True,  []  ] };
+                 'author.family':               ['authors.surname',             False, []  ],
+                 'doi':                         ['doi',                         False, None],};
 
-_query_fields = ['title','author','publisher'];
+_query_fields = ['title','author','publisher','doi'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------
