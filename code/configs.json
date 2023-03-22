@@ -8,6 +8,7 @@
                  "anystyle_references_from_cermine_refstrings",
                  "anystyle_references_from_grobid_fulltext",
                  "anystyle_references_from_grobid_refstrings",
+                 "anystyle_references_from_pdftotext_fulltext",
                  "cermine_references_from_cermine_xml",
                  "cermine_references_from_grobid_refstrings",
                  "grobid_references_from_grobid_xml",
@@ -23,6 +24,7 @@
     "chunk_size_ssoar":         10,
     "chunk_size_gesis_bib":     10,
     "chunk_size_research_data": 10,
+    "chunk_size_econbiz":       10,
 
     "requestimeout_sowiport":      60,
     "requestimeout_crossref":      60,
@@ -32,6 +34,7 @@
     "requestimeout_ssoar":         60,
     "requestimeout_gesis_bib":     60,
     "requestimeout_research_data": 60,
+    "requestimeout_econbiz":       60,
 
     "great_score_sowiport":      [100,50],
     "great_score_crossref":      [100,50],
@@ -41,6 +44,7 @@
     "great_score_ssoar":         [100,50],
     "great_score_gesis_bib":     [100,50],
     "great_score_research_data": [100,50],
+    "great_score_econbiz":       [100,50],
 
     "ok_score_sowiport":      [50,25],
     "ok_score_crossref":      [50,25],
@@ -50,6 +54,7 @@
     "ok_score_ssoar":         [50,25],
     "ok_score_gesis_bib":     [50,25],
     "ok_score_research_data": [50,25],
+    "ok_score_econbiz":       [50,25],
 
     "max_rel_diff_sowiport":      [0.7,0.5],
     "max_rel_diff_crossref":      [0.7,0.5],
@@ -59,6 +64,7 @@
     "max_rel_diff_ssoar":         [0.7,0.5],
     "max_rel_diff_gesis_bib":     [0.7,0.5],
     "max_rel_diff_research_data": [0.7,0.5],
+    "max_rel_diff_econbiz":      [0.7,0.5],
 
     "threshold_sowiport":      0.6,
     "threshold_crossref":      0.6,
@@ -68,6 +74,7 @@
     "threshold_ssoar":         0.6,
     "threshold_gesis_bib":     0.6,
     "threshold_research_data": 0.6,
+    "threshold_econbiz":       0.6,
 
     "thr_prec_sowiport":      0.6,
     "thr_prec_crossref":      0.6,
@@ -77,6 +84,7 @@
     "thr_prec_ssoar":         0.6,
     "thr_prec_gesis_bib":     0.6,
     "thr_prec_research_data": 0.6,
+    "thr_prec_econbiz":       0.6,
 
     "recheck_sowiport":      false,
     "recheck_crossref":      false,
@@ -85,5 +93,6 @@
     "recheck_arxiv":         false,
     "recheck_ssoar":         false,
     "recheck_gesis_bib":     false,
-    "recheck_research_data": false
+    "recheck_research_data": false,
+    "recheck_econbiz":       false
 }

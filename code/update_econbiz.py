@@ -19,35 +19,34 @@ except:
 _configs = json.load(IN);
 IN.close();
 
-_chunk_size       = _configs['chunk_size_openalex'];
-_request_timeout  = _configs['requestimeout_openalex'];
+_chunk_size       = _configs['chunk_size_econbiz'];
+_request_timeout  = _configs['requestimeout_econbiz'];
 
-_great_score  = _configs['great_score_openalex'];
-_ok_score     = _configs['ok_score_openalex'];
-_max_rel_diff = _configs['max_rel_diff_openalex'];
-_threshold    = _configs['threshold_openalex'];
-_thr_prec     = _configs['thr_prec_openalex'];
+_great_score  = _configs['great_score_econbiz'];
+_ok_score     = _configs['ok_score_econbiz'];
+_max_rel_diff = _configs['max_rel_diff_econbiz'];
+_threshold    = _configs['threshold_econbiz'];
+_thr_prec     = _configs['thr_prec_econbiz'];
 
-_recheck = _configs['recheck_openalex'];
+_recheck = _configs['recheck_econbiz'];
 
 #====================================================================================
-_index_m    = 'openalex';
+_index_m    = 'econbiz';
 _from_field = 'id';
-_to_field   = 'openalex_ids';
+_to_field   = 'econbiz_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'publication_year':                ['year',                        True,  None],
-                 'host_venue.publisher':            ['publishers.publisher_string', False, None],
-                 'host_venue.display_name':         ['source',                      True,  None],
-                 'authorships.author.display_name': ['authors.author_string',       False, []  ],
-                 'doi':                             ['doi',                         False, None],};
+_transformap = { 'title':                       ['title',                       True,  None], #name in matchobj, name in refobj, pick first from list, default value
+                 'year':                        ['year',                        True,  None],
+                 'publishers.name':             ['publishers.publisher_string', False, []  ],
+                 'authors.name':                ['authors.author_string',       False, []  ],
+                 'doi':                         ['doi',                         False, None],};
 
-_query_fields = ['title','authorships.author.display_name','host_venue','doi'];
+_query_fields = ['title','authors','publishers','doi'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------
 
-_client = ES(['http://localhost:9200'],timeout=60);#ES(['localhost'],scheme='http',port=9200,timeout=60);
+_client = ES(['localhost'],scheme='http',port=9200,timeout=60);
 
 i = 0;
 for success, info in bulk(_client,search(_to_field,_from_field,_query_fields,_index,_index_m,_great_score,_ok_score,_thr_prec,_max_rel_diff,_threshold,_transformap,_recheck),chunk_size=_chunk_size, request_timeout=_request_timeout):
