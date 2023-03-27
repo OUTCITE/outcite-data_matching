@@ -300,7 +300,7 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,fie
         results_doi    = [];
         results_title  = [];
         results_refstr = [];
-        ID             = None;
+        ID, match_obj  = None, None;
         print(i); t = time.time();
         if query_doi and 'doi' in refobjects[i] and refobjects[i]['doi']:
             query                 = copy(query_doi);
@@ -311,7 +311,7 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,fie
                 store(query,results_doi,index,cur);
                 print('doi:',time.time()-t,len(query['match']['doi'])); t = time.time();print(query)
             best_results_doi    = [(results_doi[   0]['_score'],results_doi[   0]['_source'],)] if results_doi  else [];
-            ID, match_obj       = get_best_match(refobjects[i],best_results_doi   ,'doi'      ,query['match']       ['doi'  ],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_doi               else [None,None];
+            ID, match_obj       = get_best_match(refobjects[i],best_results_doi,'doi',query['match']['doi'  ],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_doi else [None,None];
         if 'title' in refobjects[i] and refobjects[i]['title']:
             query                          = copy(query_title);
             query['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len];
