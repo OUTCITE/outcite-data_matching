@@ -94,5 +94,7 @@
     "recheck_ssoar":         false,
     "recheck_gesis_bib":     false,
     "recheck_research_data": false,
-    "recheck_econbiz":       false
+    "recheck_econbiz":       false,
+
+    "use_buffered": true
 }
