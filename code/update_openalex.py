@@ -35,12 +35,18 @@ _index_m    = 'openalex';
 _from_field = 'id';
 _to_field   = 'openalex_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'publication_year':                ['year',                        True,  None],
-                 'host_venue.publisher':            ['publishers.publisher_string', False, None],
-                 'host_venue.display_name':         ['source',                      True,  None],
-                 'authorships.author.display_name': ['authors.author_string',       False, []  ],
-                 'doi':                             ['doi',                         False, None],};
+_transformap = [ ('reference',     "source['refstr']"),
+                 ('year',          "int(source['publication_year'])"),
+                 ('authors',       "[{'author_string': source['authorships'][i]['author']['display_name']} for i in range(len(source['authorships']))]"),
+                 ('publishers',    "[{'publisher_string': source['host_venue']['publisher']}]"),
+                 ('title',         "source['title']"),
+                 ('issue',         "int(source['biblio']['issue'])"),
+                 ('volume',        "int(source['biblio']['volume'])"),
+                 ('start',         "int(source['biblio']['first_page'])"),
+                 ('end',           "int(source['biblio']['last_page'])"),
+                 ('doi',           "source['doi']"),
+                 ('type',          "source['type']"),
+                 ('source',        "source['host_venue']['display_name']") ];
 
 _query_fields = ['title','authorships.author.display_name','host_venue','doi'];
 #====================================================================================

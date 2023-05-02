@@ -35,11 +35,13 @@ _index_m    = 'econbiz';
 _from_field = 'id';
 _to_field   = 'econbiz_ids';
 
-_transformap = { 'title':                       ['title',                       True,  None], #name in matchobj, name in refobj, pick first from list, default value
-                 'year':                        ['year',                        True,  None],
-                 'publishers.name':             ['publishers.publisher_string', False, []  ],
-                 'authors.name':                ['authors.author_string',       False, []  ],
-                 'doi':                         ['doi',                         False, None],};
+_transformap = [ ('reference',  "source['refstr']"),
+                 ('year',       "int(source['year'])"),
+                 ('authors',    "[{'author_string': source['authors'][i]['name']} for i in range(len(source['authors']))]"),
+                 ('publishers', "[{'publisher_string': source['publishers']['name']} for i in range(len(source['publishers']))]"),
+                 ('title',      "source['title']"),
+                 ('doi',        "source['doi']"),
+                 ('type',       "source['type']") ];
 
 _query_fields = ['title','authors','publishers','doi'];
 #====================================================================================

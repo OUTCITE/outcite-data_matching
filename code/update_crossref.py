@@ -35,12 +35,16 @@ _index_m    = 'crossref';
 _from_field = 'DOI';
 _to_field   = 'crossref_ids';
 
-_transformap = { 'title':                       ['title',                       True,  None], #name in matchobj, name in refobj, pick first from list, default value
-                 'published-print.date-parts':  ['year',                        True,  None],
-                 'publisher':                   ['publishers.publisher_string', False, []  ],
-                 'author.given':                ['authors.firstnames',          False, []  ],
-                 'author.family':               ['authors.surname',             False, []  ],
-                 'doi':                         ['doi',                         False, None],};
+
+_transformap =  [ ('reference',    "source['refstr']"),
+                  ('year',         "int(source['published-print']['date-parts'][0][0])"),
+                  ('authors',      "[{'firstnames': [source['author'][i]['given']],'surname': source['author'][i]['family']} for i in range(len(source['author']))]"),
+                  ('publishers',   "[{'publisher_string': source['publisher']}]"),
+                  ('title',        "source['title'][0]"),
+                  ('issue',        "int(source['issue'])"),
+                  ('volume',       "int(source['volume'])"),
+                  ('doi',          "source['DOI']"),
+                  ('type',         "source['type']") ];
 
 _query_fields = ['title','author','publisher','doi'];
 #====================================================================================

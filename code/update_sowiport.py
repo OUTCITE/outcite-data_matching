@@ -35,11 +35,17 @@ _index_m    = 'sowiport';
 _from_field = 'id';
 _to_field   = 'sowiport_ids';
 
-_transformap = { 'title':           ['title',                       False, None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'date':            ['year',                        False, None],
-                 'corePublisher':   ['publishers.publisher_string', False, None],
-                 'coreEditor':      ['editors.editor_string',       False, []  ],
-                 'coreAuthor':      ['authors.author_string',       False, []  ] };
+_transformap = [ ('reference',     "source['refstr']"),
+                 ('year',          "int(source['date'])"),
+                 ('authors',       "[{'author_string': source['coreAuthor'][i]} for i in range(len(source['coreAuthor']))]"),
+                 ('publishers',    "[{'publisher_string': source['corePublisher']}]"),
+                 ('editors',       "[{'editor_string': source['coreEditor']}]"),
+                 ('title',         "source['title']"),
+                 ('issue',         "int(source['coreZsnummer'])"),
+                 ('volume',        "int(source['coreZsband'])"),
+                 ('type',          "source['subtype']"),
+                 ('doi',           "source['doi'][0]"),
+                 ('source',        "source['coreJournalTitle']") ];
 
 _query_fields = ['title','coreAuthor','coreJournalTitle','institutions','corePublisher'];
 #====================================================================================

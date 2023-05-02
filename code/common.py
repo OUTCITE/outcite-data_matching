@@ -92,8 +92,72 @@ def remove_empty(data):
             new_data[k] = v
     return new_data
 
+def transform(source,transformap):
+    target = dict();
+    for target_key, source_str in transformap:
+        source_val = None;
+        try:
+            #print(source_str)
+            source_val = eval(source_str,{'source':source},{'source':source});
+        except Exception as e:
+            #traceback.print_exc();
+            pass;#print(e);
+        if source_val:
+            target[target_key] = source_val;
+    return target;
 
-def transform(result,transformap):
+def transform_(result,transformap):
+    matchobj = dict();
+    for match_keystr in transformap:
+        #--------------------------------------------------------------------------------------------------------------------------------------------------------
+        match_keys     = match_keystr.split('.');                                                               # The path in the matchobj
+        match_pointers = list(walk_down(result,match_keys));                                                          # The information stored at the end of the path
+        if len(match_pointers)==0:                                                          # If the path does not exist
+            continue;
+        ref_keystr,get_1st,default = transformap[match_keystr];                                                    # The information from the transformation mapping
+        match_values               = extract(match_pointers) if get_1st and len(match_pointers)>=1 else match_pointers;  # The extracted information #TODO: this did not work
+        ref_keys                   = ref_keystr.split('.');                                                        # The path in the refobj
+        #--------------------------------------------------------------------------------------------------------------------------------------------------------
+        if len(ref_keys) == 1:
+            matchobj_ = {ref_keys[0]: match_values};
+        else:
+            if default == []:
+                matchobj_ = dict();#{ref_keys[0]: []};
+                values    = match_values if isinstance(match_values,list) else [match_values];
+                matchobj_[ref_keys[0]] = [dict() for j in range(len(values))] if not ref_keys[0] in matchobj_ else matchobj_[ref_keys[0]];
+                for j in range(len(values)):
+                    ref_pointer = matchobj_[ref_keys[0]][j];
+                    for i in range(1,len(ref_keys)):
+                        ref_pointer[ref_keys[i]] = dict();
+                        if i+1 < len(ref_keys):
+                            ref_pointer = ref_pointer[ref_keys[i]];
+                        elif values[j] and len(values[j]) > 0:
+                            ref_pointer[ref_keys[i]] = values[j];
+            else:
+                matchobj_[ref_keys[0]] = dict();
+                ref_pointer           = matchobj_[ref_keys[0]];
+                for i in range(1,len(ref_keys)):
+                    ref_pointer[ref_keys[i]] = dict();
+                    if i+1 < len(ref_keys):
+                        ref_pointer = ref_pointer[ref_keys[i]];
+                    elif match_values and len(match_values) > 0:
+                        ref_pointer[ref_keys[i]] = match_values;
+        matchobj = merge(matchobj,matchobj_);
+        print(match_keystr,ref_keystr,get_1st);
+        print(default,matchobj,matchobj_);
+        #--------------------------------------------------------------------------------------------------------------------------------------------------------
+        #keys = list(matchobj.keys());
+        #for key in keys:
+        #    if not matchobj[key] or len(matchobj[key]) == 0:
+        #        del matchobj[key];
+    matchobj = remove_empty(matchobj);
+    print('----------------------------------------------------------')
+    print(matchobj);
+    print('----------------------------------------------------------')
+    return matchobj;
+
+
+def transform_(result,transformap): #TODO: This whole stupid approach still does not work
     matchobj = dict();
     for match_keystr in transformap:
         #--------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -240,7 +304,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
     matchobj = transform(results[0][1],transformap);
     log(['=QUERY===============================================================================\n'+query_field.upper()+': '+query_val+'\n====================================================================================='],OUT);
     log(['=MATCH===============================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj])],OUT);
-    #print('=REFER===============================================================================\n'+'\n'.join([key+':    '+str(refobj[key])   for key in refobj  ])+'\n================================================================================');
+    log(['=REFER===============================================================================\n'+'\n'.join([key+':    '+str(refobj[key])   for key in refobj  ])+'\n================================================================================'],OUT);
     prec, rec, tp, p, t, matches, mismatches, mapping, costs = compare_refobject(matchobj,refobj,threshold);
     matchprec                                                = len(matches)/(len(matches)+len(mismatches)) if len(matches)+len(mismatches) > 0 else 0;
     if len(matches)+len(mismatches) > 0:
@@ -294,7 +358,7 @@ def make_refs(matched_refs,index_m):
         refobjects.append(new_ref);
     return refobjects;
 
-def find(refobjects,client,index,field,query_doi,query_title,query_refstring,fields,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur):
+def find(refobjects,client,index,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur):
     ids          = [];
     matchobjects = [];
     for i in range(len(refobjects)):
@@ -302,46 +366,52 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,fie
         results_title  = [];
         results_refstr = [];
         ID, match_obj  = None, None;
-        print(i); t = time.time();
+        ##print(i); t = time.time();
+        log(['------------------------------------------------'],OUT);
         if query_doi and 'doi' in refobjects[i] and refobjects[i]['doi']:
             query                 = copy(query_doi);
-            query['match']['doi'] = refobjects[i]['doi'][:_max_val_len];
+            query['match']['doi'] = refobjects[i]['doi'][:_max_val_len]; log([query],OUT);
             results_doi           = lookup(query,index,cur) if _use_buffered else None;
             if not results_doi:
-                results_doi = client.search(index=index,query=query,_source=fields)['hits']['hits'];
+                results_doi = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_doi,index,cur);
-                print('doi:',time.time()-t,len(query['match']['doi'])); t = time.time();print(query)
+                ##print('doi:',time.time()-t,len(query['match']['doi'])); t = time.time();print(query)
             best_results_doi    = [(results_doi[   0]['_score'],results_doi[   0]['_source'],)] if results_doi  else [];
             ID, match_obj       = get_best_match(refobjects[i],best_results_doi,'doi',query['match']['doi'  ],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_doi else [None,None];
+            log([results_doi],OUT);
         if 'title' in refobjects[i] and refobjects[i]['title']:
             query                          = copy(query_title);
-            query['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len];
+            query['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len]; log([query],OUT);
             results_title                  = lookup(query,index,cur) if _use_buffered else None;
             if not results_title:
-                results_title = client.search(index=index,query=query,_source=fields)['hits']['hits'];
+                results_title = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_title,index,cur);
-                print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
+                ##print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
         if 'title' not in refobjects[i] and 'reference' in refobjects[i] and refobjects[i]['reference']:
             query                          = copy(query_title);
-            query['match_phrase']['title'] = refobjects[i]['reference'][:_max_val_len]; #Use reference to search in title field
+            query['match_phrase']['title'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#Use reference to search in title field
             results_title                  = lookup(query,index,cur) if _use_buffered else None;
             if not results_title:
-                results_title = client.search(index=index,query=query,_source=fields)['hits']['hits'];
+                results_title = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_title,index,cur);
-                print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
+                ##print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
             best_results_title  = [(results_title[ 0]['_score'],results_title[ 0]['_source'],)] if results_title  else [];
+            log([results_title],OUT);
             ID, match_obj       = get_best_match(refobjects[i],best_results_title ,'title'    ,query['match_phrase']['title'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_title  and not ID else [ID,match_obj];
-        if len(results_title) == 0 and 'reference' in refobjects[i] and refobjects[i]['reference']: #TODO: For speed purposes, but not good because we want to do all queries
+        if 'reference' in refobjects[i] and refobjects[i]['reference']:
             query                         = copy(query_refstring);
-            query['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
-            #query['match_phrase']['refstr'] = refobjects[i]['reference'][:_max_val_len]; #TODO: Change to this after refstr is available!
+            #query['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
+            query['match_phrase']['refstr'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#TODO: Change to this after refstr is available!
             results_refstr                = lookup(query,index,cur) if _use_buffered else None;
             if not results_refstr:
-                results_refstr = client.search(index=index,query=query,_source=fields)['hits']['hits'];
+                results_refstr = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_refstr,index,cur);
-                print('reference:',time.time()-t,len(query['multi_match']['query'])); t = time.time();print(query)
+                #print('reference:',time.time()-t,len(query['multi_match']['query'])); t = time.time();print(query)
+                ##print('reference:',time.time()-t,len(query['match_phrase']['refstr'])); t = time.time();print(query)
+            log([results_refstr],OUT);
             best_results_refstr = [(results_refstr[0]['_score'],results_refstr[0]['_source'],)] if results_refstr else [];
-            ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['multi_match']['query'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
+            #ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['multi_match']['query'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
+            ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['match_phrase']['refstr'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
 #        if (not (query_doi and 'doi' in refobjects[i] and refobjects[i]['doi'])) and (not ('title' in refobjects[i] and refobjects[i]['title'])) and (not ('reference' in refobjects[i] and refobjects[i]['reference'])):
 #            print('Neither title nor refstr in refobject!');
 #            continue;
@@ -362,13 +432,13 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
     cur = con.cursor();
     cur.execute("CREATE TABLE IF NOT EXISTS "+index_m+"(query TEXT PRIMARY KEY, result TEXT)");
     #----------------------------------------------------------------------------------------------------------------------------------
-    ref_fields      = ['id'] + [transformap[key][0].split('.')[0] for key in transformap] + [field[:-1]];
-    match_fields    = [id_field] + list(transformap.keys());
+    #ref_fields      = ['id'] + [transformap[key][0].split('.')[0] for key in transformap] + [field[:-1]];
+    #match_fields    = [id_field] + list(transformap.keys());
     body            = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'processed_'+field: True, field: None } } };
     query_doi       = { 'match':        { 'doi'  : None } } if 'doi' in query_fields else None;
     query_title     = { 'match_phrase': { 'title': None } };
-    query_refstring = { 'multi_match':  { 'query': None, 'fields': query_fields } };
-    #query_refstring = { 'match_phrase': { 'refstr': None } }; #TODO: Change to this after refstr is available!
+    #query_refstring = { 'multi_match':  { 'query': None, 'fields': query_fields } };
+    query_refstring = { 'match_phrase': { 'refstr': None } }; #TODO: Change to this after refstr is available!
     #scr_query       = { "ids": { "values": _ids } } if _ids else {'bool':{'must_not':{'term':{'processed_'+field: True}}}} if not recheck else {'match_all':{}};
     scr_query       = { "ids": { "values": _ids } } if _ids else { 'bool':{'must_not': [{'term':{'processed_'+field: True}}], 'should': [{'term':{'has_'+refobj:True}} for refobj in _refobjs] } } if not recheck else {'bool': {'should': [{'term':{'has_'+refobj:True}} for refobj in _refobjs]}};
     #----------------------------------------------------------------------------------------------------------------------------------
@@ -391,7 +461,7 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 #previous_refobjects            = [{ ref_field: ref[ref_field] for ref_field in ref_fields if ref_field in ref } for ref in doc['_source'][refobj]] if refobj in doc['_source'] and doc['_source'][refobj] else None;
                 previous_refobjects                    = doc['_source'][refobj] if refobj in doc['_source'] and doc['_source'][refobj] else None;
                 #print(previous_refobjects)
-                new_ids, new_refobjects, matchobjects    = find(previous_refobjects,client_m,index_m,field,query_doi,query_title,query_refstring,match_fields,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur) if isinstance(previous_refobjects,list) else (set([]),previous_refobjects,[]);
+                new_ids, new_refobjects, matchobjects    = find(previous_refobjects,client_m,index_m,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur) if isinstance(previous_refobjects,list) else (set([]),previous_refobjects,[]);
                 new_ids_set                              = set(new_ids);
                 ids                                     |= new_ids_set;
                 body['_source']['doc'][refobj]           = new_refobjects; # The updated ones
@@ -404,7 +474,7 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 for i in range(len(new_ids)):
                     if not new_ids[i] in matched_refs:
                         matched_refs[new_ids[i]] = matchobjects[i];
-                #body['_source']['doc']['silver_refobjects'] = silver_refobjects;#{refobj: {index_m: new_refobjects}}; # The updated ones #TODO: Use again, just could not overwrite index
+                body['_source']['doc']['silver_refobjects'] = silver_refobjects;#{refobj: {index_m: new_refobjects}}; # The updated ones #TODO: Use again, just could not overwrite index
                 print('-->',refobj,'gave',['','no '][len(new_ids_set)==0]+'ids',', '.join(new_ids_set),'\n');
             body['_source']['doc']['matched_references_from_'+index_m] = make_refs(matched_refs,index_m);
             print('------------------------------------------------\n-- overall ids --------------------------------\n'+', '.join(ids)+'\n------------------------------------------------');

@@ -35,11 +35,11 @@ _index_m    = 'dnb';
 _from_field = 'id';
 _to_field   = 'dnb_ids';
 
-_transformap = { 'title':      ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'pub_locs':   ['place',                       True,  None],
-                 'pub_dates':  ['year',                        True,  None],
-                 'publishers': ['publishers.publisher_string', False, []  ],
-                 'authors':    ['authors.author_string',       False, []  ]};
+_transformap = [ ('reference',  "source['refstr']"),
+                 ('year',       "int(source['pub_dates'][0])"),
+                 ('authors',    "[{'author_string': source['authors'][i]} for i in range(len(source['authors']))]"),
+                 ('title',      "source['title']"),
+                 ('publishers', "[{'publisher_string': source['publishers'][i]} for i in range(len(source['publishers']))]") ];
 
 _query_fields = ['title','authors','titles','publishers','editors'];
 #====================================================================================

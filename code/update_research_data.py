@@ -35,13 +35,14 @@ _index_m    = 'research_data';
 _from_field = 'id';
 _to_field   = 'research_data_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'publication_year':                ['year',                        True,  None],
-                 'publisher':                       ['publishers.publisher_string', False, []  ],
-                 'person':                          ['authors.author_string',       False, []  ],
-                 'doi':                             ['doi',                         True,  None],
-                 'source':                          ['container_string',            True,  None],
-                 'citation_string_en':              ['reference',                   True,  None] }
+_transformap = [ ('reference',     "source['refstr']"),
+                 ('year',          "int(source['publication_year'])"),
+                 ('authors',       "[{'author_string': source['person'][i]} for i in range(len(source['person']))]"),
+                 ('publishers',    "[{'publisher_string': source['publisher']}]"),
+                 ('za_number',     "source['study_number']"),
+                 ('title',         "source['title']"),
+                 ('doi',           "source['doi'][0] if isinstance(source['doi'],list) else None"),
+                 ('type',          "source['type']") ];
 
 _query_fields = ['title','person','source','publisher','doi'];
 #====================================================================================

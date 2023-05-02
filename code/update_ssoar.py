@@ -35,11 +35,15 @@ _index_m    = 'ssoar';
 _from_field = '@id';
 _to_field   = 'ssoar_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'date_info.issue_date':            ['year',                        True,  None],
-                 'editor':                          ['editor',                      True,  None],
-                 'authors.name':                    ['authors.author_string',       False, []  ],
-                 'doi':                             ['doi',                         True,  None],};
+_transformap = [ ('reference',    "source['refstr']"),
+                 ('year',         "int(source['date_info']['issue_date'])"),
+                 ('authors',      "[{'firstnames': source['authors'][i]['firstnames'],'surname': source['authors'][i]['surname'],'author_string': source['authors'][i]['name']} for i in range(len(source['authors']))]"),
+                 ('title',        "source['title']"),
+                 ('issue',        "int(source['source_info']['src_issue'])"),
+                 ('volume',       "int(source['source_info']['src_volume'])"),
+                 ('doi',          "source['doi']"),
+                 ('type',         "source['doctypes'][0]"),
+                 ('source',       "source['source_info']['src_journal']") ];
 
 _query_fields = ['title','authors.name','doi'];
 #====================================================================================

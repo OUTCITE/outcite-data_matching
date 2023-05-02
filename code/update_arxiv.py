@@ -35,13 +35,11 @@ _index_m    = 'arxiv';
 _from_field = 'id';
 _to_field   = 'arxiv_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 #'update_date':                     ['year',                        False, None],
-                 'authors_parsed.author_string':    ['authors.author_string',       False, []  ],
-                 #'authors_parsed.surnames':         ['authors.surname',             False, []  ],
-                 #'authors_parsed.initials':         ['authors.initials',            False, []  ],
-                 #'authors_parsed.firstnames':       ['authors.firstnames',          False, []  ],
-                 'doi':                             ['doi',                         True, None],};
+_transformap = [ ('reference', "source['refstr']"),
+                 ('year',      "int(source['update_date'].split('-')[0])"),
+                 ('authors',   "[{'author_string': source['authors_parsed'][i]['author_string'],'surname': source['authors_parsed'][i]['surname'],'firstnames': source['authors_parsed'][i]['firstnames'],'initials': source['authors_parsed'][i]['initials']} for i in range(len(source['authorships']))]"),
+                 ('title',     "source['title']"),
+                 ('doi',       "source['doi']") ];
 
 _query_fields = ['title','authors_parsed.author_string','doi'];
 #====================================================================================

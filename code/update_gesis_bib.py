@@ -35,9 +35,16 @@ _index_m    = 'gesis_bib';
 _from_field = 'id';
 _to_field   = 'gesis_bib_ids';
 
-_transformap = { 'title':                           ['title',                       True,  None], #name in matchobj, path in refobj, name in refobj, pick first from list, default value
-                 'coreAuthor':                      ['authors.author_string',       False, []  ],
-                 'source':                          ['container_string',            True,  None] }
+_transformap = [ ('reference',     "source['refstr']"),
+                 ('year',          "int(source['date'])"),
+                 ('authors',       "[{'author_string': source['coreAuthor'][i]} for i in range(len(source['coreAuthor']))]"),
+                 ('publishers',    "[{'publisher_string': source['corePublisher']}]"),
+                 ('editors',       "[{'editor_string': source['coreEditor']}]"),
+                 ('title',         "source['title']"),
+                 ('issue',         "int(source['coreZsnummer'])"),
+                 ('volume',        "int(source['coreZsband'])"),
+                 ('type',          "source['subtype']"),
+                 ('source',        "source['coreJournalTitle']") ];
 
 _query_fields = ['title','coreAuthor','source'];
 #====================================================================================
