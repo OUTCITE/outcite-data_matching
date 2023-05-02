@@ -381,37 +381,37 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,gre
             log([results_doi],OUT);
         if 'title' in refobjects[i] and refobjects[i]['title']:
             query                          = copy(query_title);
-            query['match_phrase']['title'] = refobjects[i]['title'][:_max_val_len]; log([query],OUT);
+            query['match']['title'] = refobjects[i]['title'][:_max_val_len]; log([query],OUT);
             results_title                  = lookup(query,index,cur) if _use_buffered else None;
             if not results_title:
                 results_title = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_title,index,cur);
-                ##print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
+                ##print('title:',time.time()-t,len(query['match']['title'])); t = time.time();print(query)
         if 'title' not in refobjects[i] and 'reference' in refobjects[i] and refobjects[i]['reference']:
             query                          = copy(query_title);
-            query['match_phrase']['title'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#Use reference to search in title field
+            query['match']['title'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#Use reference to search in title field
             results_title                  = lookup(query,index,cur) if _use_buffered else None;
             if not results_title:
                 results_title = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_title,index,cur);
-                ##print('title:',time.time()-t,len(query['match_phrase']['title'])); t = time.time();print(query)
+                ##print('title:',time.time()-t,len(query['match']['title'])); t = time.time();print(query)
             best_results_title  = [(results_title[ 0]['_score'],results_title[ 0]['_source'],)] if results_title  else [];
             log([results_title],OUT);
-            ID, match_obj       = get_best_match(refobjects[i],best_results_title ,'title'    ,query['match_phrase']['title'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_title  and not ID else [ID,match_obj];
+            ID, match_obj       = get_best_match(refobjects[i],best_results_title ,'title'    ,query['match']['title'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_title  and not ID else [ID,match_obj];
         if 'reference' in refobjects[i] and refobjects[i]['reference']:
             query                         = copy(query_refstring);
             #query['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
-            query['match_phrase']['refstr'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#TODO: Change to this after refstr is available!
+            query['match']['refstr'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#TODO: Change to this after refstr is available!
             results_refstr                = lookup(query,index,cur) if _use_buffered else None;
             if not results_refstr:
                 results_refstr = client.search(index=index,query=query)['hits']['hits'];
                 store(query,results_refstr,index,cur);
                 #print('reference:',time.time()-t,len(query['multi_match']['query'])); t = time.time();print(query)
-                ##print('reference:',time.time()-t,len(query['match_phrase']['refstr'])); t = time.time();print(query)
+                ##print('reference:',time.time()-t,len(query['match']['refstr'])); t = time.time();print(query)
             log([results_refstr],OUT);
             best_results_refstr = [(results_refstr[0]['_score'],results_refstr[0]['_source'],)] if results_refstr else [];
             #ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['multi_match']['query'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
-            ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['match_phrase']['refstr'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
+            ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['match']['refstr'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
 #        if (not (query_doi and 'doi' in refobjects[i] and refobjects[i]['doi'])) and (not ('title' in refobjects[i] and refobjects[i]['title'])) and (not ('reference' in refobjects[i] and refobjects[i]['reference'])):
 #            print('Neither title nor refstr in refobject!');
 #            continue;
@@ -435,10 +435,10 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
     #ref_fields      = ['id'] + [transformap[key][0].split('.')[0] for key in transformap] + [field[:-1]];
     #match_fields    = [id_field] + list(transformap.keys());
     body            = { '_op_type': 'update', '_index': index, '_id': None, '_source': { 'doc': { 'processed_'+field: True, field: None } } };
-    query_doi       = { 'match':        { 'doi'  : None } } if 'doi' in query_fields else None;
-    query_title     = { 'match_phrase': { 'title': None } };
+    query_doi       = { 'match': { 'doi'  : None } } if 'doi' in query_fields else None;
+    query_title     = { 'match': { 'title': None } };
     #query_refstring = { 'multi_match':  { 'query': None, 'fields': query_fields } };
-    query_refstring = { 'match_phrase': { 'refstr': None } }; #TODO: Change to this after refstr is available!
+    query_refstring = { 'match': { 'refstr': None } }; #TODO: Change to this after refstr is available!
     #scr_query       = { "ids": { "values": _ids } } if _ids else {'bool':{'must_not':{'term':{'processed_'+field: True}}}} if not recheck else {'match_all':{}};
     scr_query       = { "ids": { "values": _ids } } if _ids else { 'bool':{'must_not': [{'term':{'processed_'+field: True}}], 'should': [{'term':{'has_'+refobj:True}} for refobj in _refobjs] } } if not recheck else {'bool': {'should': [{'term':{'has_'+refobj:True}} for refobj in _refobjs]}};
     #----------------------------------------------------------------------------------------------------------------------------------
