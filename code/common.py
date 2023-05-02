@@ -461,6 +461,7 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
                 #previous_refobjects            = [{ ref_field: ref[ref_field] for ref_field in ref_fields if ref_field in ref } for ref in doc['_source'][refobj]] if refobj in doc['_source'] and doc['_source'][refobj] else None;
                 previous_refobjects                    = doc['_source'][refobj] if refobj in doc['_source'] and doc['_source'][refobj] else None;
                 #print(previous_refobjects)
+                log(['---->',refobj],OUT);
                 new_ids, new_refobjects, matchobjects    = find(previous_refobjects,client_m,index_m,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur) if isinstance(previous_refobjects,list) else (set([]),previous_refobjects,[]);
                 new_ids_set                              = set(new_ids);
                 ids                                     |= new_ids_set;
