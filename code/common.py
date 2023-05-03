@@ -427,7 +427,7 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,gre
 
 def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,recheck):
     #----------------------------------------------------------------------------------------------------------------------------------
-    OUT = open(_logfile,'w');
+    OUT = open(index_m+'_'+_logfile,'w');
     con = sqlite3.connect(index_m+'_'+_bufferdb);
     cur = con.cursor();
     cur.execute("CREATE TABLE IF NOT EXISTS "+index_m+"(query TEXT PRIMARY KEY, result TEXT)");
