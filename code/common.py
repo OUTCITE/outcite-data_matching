@@ -33,7 +33,10 @@ _ids     = _configs["ids"];#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar
 #'''
 #_refobjs = [ 'anystyle_references_from_gold_refstrings' ];
 
-YEAR = re.compile(r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'); #1500--2023
+YEAR      = re.compile(r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'); #1500--2023
+NAMESEP   = re.compile(r'\W');
+GARBAGE   = re.compile(r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)');
+SOURCEKEY = re.compile(r"source\['[A-Za-z|_]+[1-9|A-Za-z|_]*'\]");
 
 def log(strings,OUT):
     OUT.write(' '.join([str(string) for string in strings])+'\n');
@@ -215,6 +218,13 @@ def distance_2(a,b):
     dist     = max([len(a),len(b)]) - overlap;
     return dist;
 
+def distance_3(a,b):
+    a,b        = '_'+re.sub(GARBAGE,'',a.lower()),'_'+re.sub(GARBAGE,'',b.lower());#a.lower(), b.lower();
+    s          = SM(None,a,b);
+    overlap    = sum([block.size**1 for block in s.get_matching_blocks() if block.size>=2]);
+    dist       = min([len(a),len(b)])**1-overlap;
+    return dist;
+
 def flatten(d, parent_key='', sep='_'):
     items = [];
     for k, v in d.items():
@@ -247,7 +257,7 @@ def dictfy(pairs):
 
 def assign(A,B): # Two lists of strings
     #print(A); print(B); print('---------------------------------------------------------');
-    M          = np.array([[distance_2(a,b) if isinstance(a,str) and isinstance(b,str) else a!=b for b in B] for a in A]);
+    M          = np.array([[distance_3(a,b) if isinstance(a,str) and isinstance(b,str) else a!=b for b in B] for a in A]);
     rows, cols = LSA(M);
     mapping    = [pair for pair in zip(rows,cols)];
     costs      = [M[assignment] for assignment in mapping];
@@ -258,7 +268,7 @@ def similar_enough(a,b,cost,threshold):
         if YEAR.fullmatch(a) and YEAR.fullmatch(b):
             y1, y2 = int(a), int(b);
             return abs(y1-y2) <= 1; # A one year difference between years is accepted
-        return cost / max([len(a),len(b)]) < threshold;
+        return cost / min([len(a),len(b)])**1 < threshold;#max and not **1
     return a == b;
 
 def compare_refstrings(P_strings,T_strings,threshold): # Two lists of strings
@@ -298,38 +308,44 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
     #TITLE = True if 'title' in refobj and refobj['title'] else False;
     #query_val = refobj[query_field];
     if len(results) > 0:
-            log(['____________________________________________________________________________________________________________________'],OUT);#,results[0][0]['id'],'\n',results[0][0]['title'],'\n',results[0][1],'\n-------------------------------------------');
+            log(['____________________________________________________________________________________________________________________'],OUT);
     else:
         return (None,None);
-    matchobj = transform(results[0][1],transformap);
-    log(['=QUERY===============================================================================\n'+query_field.upper()+': '+query_val+'\n====================================================================================='],OUT);
-    log(['=MATCH===============================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj])],OUT);
     log(['=REFER===============================================================================\n'+'\n'.join([key+':    '+str(refobj[key])   for key in refobj  ])+'\n================================================================================'],OUT);
-    prec, rec, tp, p, t, matches, mismatches, mapping, costs = compare_refobject(matchobj,refobj,threshold);
-    matchprec                                                = len(matches)/(len(matches)+len(mismatches)) if len(matches)+len(mismatches) > 0 else 0;
-    if len(matches)+len(mismatches) > 0:
-        log(['Matchprec:',matchprec,'Precision:',prec,'Recall:',rec,'\n___________________________________'],OUT);
-        log(['Matches:   ',matches],OUT);
-        log(['Mismatches:',mismatches,'\n___________________________________'],OUT);
-    title = results[0][1]['title'][0] if isinstance(results[0][1]['title'],list) and len(results[0][1]['title'])>0 else '' if isinstance(results[0][1]['title'],list) else results[0][1]['title'];
-    if results[0][0] > great_score[query_field=='title']:
-        log(['PASSED '+query_field.upper()+'-query: score',results[0][0],'>',great_score[query_field=='title']],OUT);
-        if matchprec >= thr_prec and id_field in results[0][1]:
-            log(['DID MATCH:',matchprec,'>=',thr_prec],OUT);
-            return (results[0][1][id_field],matchobj,);
-        log(['DID NOT MATCH.'],OUT);
-    elif results[0][0] > ok_score[query_field=='title'] and title and distance(query_val,title) < max_rel_diff[query_field=='title']:
-        log(['PASSED '+query_field.upper()+'-query: score',results[0][0],'>',ok_score[query_field=='title'],'and distance',distance(query_val,title),'<',max_rel_diff[query_field=='title']],OUT);
-        if matchprec >= thr_prec and id_field in results[0][1]:
-            log(['DID MATCH:',matchprec,'>=',thr_prec],OUT);
-            return (results[0][1][id_field],matchobj,);
-        log(['DID NOT MATCH.'],OUT);
-        #matchID = results[0][1][id_field] if matchprec >= thr_prec and id_field in results[0][1] else None;
-        #return (matchID,matchobj) if matchID else (None,None);
-    if (not query_val) or not title:
-        log(['FAILED:',query_val,title],OUT);
-    else:
-        log(['FAILED: score',results[0][0],'<=',ok_score[query_field=='title'],'and/or distance',distance(query_val,title),'>=',max_rel_diff[query_field=='title'],'and/or did not match'],OUT);
+    log(['=QUERY===============================================================================\n'+query_field.upper()+': '+query_val+'\n====================================================================================='],OUT);
+    for score,source in results: # This will still return the first matching result, but if the ranking order is not so good, then a later one also has a chance
+        matchobj = transform(source,transformap);
+        log(['=MATCH===============================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj])],OUT);
+        #matchobj_ = {key:matchobj[key] if key!='authors' else [name_part for author in matchobj['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in matchobj};
+        #refobj_   = {key:refobj  [key] if key!='authors' else [name_part for author in refobj  ['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in refobj  };
+        matchobj_ = {key:matchobj[key] if key!='authors' else [{'author_string':[part for part in NAMESEP.split(author['author_string']) if part]} for author in matchobj['authors'] if 'author_string' in author and author['author_string']] for key in matchobj if matchobj[key] not in [None,'None',' ',''] };
+        refobj_   = {key:refobj  [key] if key!='authors' else [{'author_string':[part for part in NAMESEP.split(author['author_string']) if part]} for author in refobj  ['authors'] if 'author_string' in author and author['author_string']] for key in refobj   if refobj  [key] not in [None,'None',' ',''] };
+        prec, rec, tp, p, t, matches, mismatches, mapping, costs = compare_refobject(matchobj_,refobj_,threshold);
+        #matchprec                                                = len(matches)/(len(matches)+len(mismatches)) if len(matches)+len(mismatches) > 0 else 0;
+        matchprec                                                = sum([min(len(a),len(b)) if key!='_year' else 25 for key,a,b in matches])/(sum([min(len(a),len(b)) if key!='_year' else 25 for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else 25 for key,a,b in mismatches])) if sum([min(len(a),len(b)) if key!='_year' else 25 for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else 25 for key,a,b in mismatches]) > 0 else 0;
+        if len(matches)+len(mismatches) > 0:
+            log(['Matchprec:',matchprec,'Precision:',prec,'Recall:',rec,'\n___________________________________'],OUT);
+            log(['Matches:   ',matches],OUT);
+            log(['Mismatches:',mismatches,'\n___________________________________'],OUT);
+        title = source['title'][0] if isinstance(source['title'],list) and len(source['title'])>0 else '' if isinstance(source['title'],list) else source['title'];
+        if score > great_score[query_field=='title']:
+            log(['PASSED '+query_field.upper()+'-query: score',score,'>',great_score[query_field=='title']],OUT);
+            if matchprec >= thr_prec and len(matches)>1 and id_field in source:
+                log(['DID MATCH:',matchprec,'>=',thr_prec,'and #matches =',len(matches)],OUT);
+                return (source[id_field],matchobj,);
+            log(['DID NOT MATCH.'],OUT);
+        elif score > ok_score[query_field=='title'] and title and distance(query_val,title) < max_rel_diff[query_field=='title']:
+            log(['PASSED '+query_field.upper()+'-query: score',score,'>',ok_score[query_field=='title'],'and distance',distance(query_val,title),'<',max_rel_diff[query_field=='title']],OUT);
+            if matchprec >= thr_prec and len(matches)>1 and id_field in source:
+                log(['DID MATCH:',matchprec,'>=',thr_prec,'and #matches =',len(matches)],OUT);
+                return (source[id_field],matchobj,);
+            log(['DID NOT MATCH.'],OUT);
+            #matchID = source[id_field] if matchprec >= thr_prec and id_field in source else None;
+            #return (matchID,matchobj) if matchID else (None,None);
+        if (not query_val) or not title:
+            log(['FAILED:',query_val,title],OUT);
+        else:
+            log(['FAILED: score',score,'<=',ok_score[query_field=='title'],'and/or distance',distance(query_val,title),'>=',max_rel_diff[query_field=='title'],'and/or did not match'],OUT);
     return (None,None);
 
 def make_refs(matched_refs,index_m):
@@ -359,6 +375,7 @@ def make_refs(matched_refs,index_m):
     return refobjects;
 
 def find(refobjects,client,index,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur):
+    sourcefields = list(set(['title',id_field]+[match[8:-2] for match in SOURCEKEY.findall(" ".join([fro for to,fro in transformap]))]));
     ids          = [];
     matchobjects = [];
     for i in range(len(refobjects)):
@@ -366,55 +383,44 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,gre
         results_title  = [];
         results_refstr = [];
         ID, match_obj  = None, None;
-        ##print(i); t = time.time();
+        t              = time.time();
         log(['------------------------------------------------'],OUT);
         if query_doi and 'doi' in refobjects[i] and refobjects[i]['doi']:
             query                 = copy(query_doi);
             query['match']['doi'] = refobjects[i]['doi'][:_max_val_len]; log([query],OUT);
             results_doi           = lookup(query,index,cur) if _use_buffered else None;
             if not results_doi:
-                results_doi = client.search(index=index,query=query)['hits']['hits'];
-                store(query,results_doi,index,cur);
-                ##print('doi:',time.time()-t,len(query['match']['doi'])); t = time.time();print(query)
-            best_results_doi    = [(results_doi[   0]['_score'],results_doi[   0]['_source'],)] if results_doi  else [];
+                results_doi      = client.search(index=index,query=query,size=5,_source=sourcefields)
+                results_doi,took = results_doi['hits']['hits'], results_doi['took'];
+                store(query,results_doi,index,cur); # This requires no significant time
+                log(['doi:',took,time.time()-t,len(query['match']['doi'])],OUT); t = time.time();
+            best_results_doi    = [(result_doi['_score'],result_doi['_source'],) for result_doi in results_doi];
             ID, match_obj       = get_best_match(refobjects[i],best_results_doi,'doi',query['match']['doi'  ],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_doi else [None,None];
-            log([results_doi],OUT);
-        if 'title' in refobjects[i] and refobjects[i]['title']:
-            query                          = copy(query_title);
-            query['match']['title'] = refobjects[i]['title'][:_max_val_len]; log([query],OUT);
-            results_title                  = lookup(query,index,cur) if _use_buffered else None;
+            log(results_doi,OUT);
+        if ('title' in refobjects[i] and refobjects[i]['title']) or ('reference' in refobjects[i] and refobjects[i]['reference']):
+            query                   = copy(query_title);
+            query['match']['title'] = refobjects[i]['title'][:_max_val_len] if 'title' in refobjects[i] and refobjects[i]['title'] else refobjects[i]['reference'][:_max_val_len]; log([query],OUT);
+            results_title           = lookup(query,index,cur) if _use_buffered else None;
             if not results_title:
-                results_title = client.search(index=index,query=query)['hits']['hits'];
-                store(query,results_title,index,cur);
-                ##print('title:',time.time()-t,len(query['match']['title'])); t = time.time();print(query)
-        if 'title' not in refobjects[i] and 'reference' in refobjects[i] and refobjects[i]['reference']:
-            query                          = copy(query_title);
-            query['match']['title'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#Use reference to search in title field
-            results_title                  = lookup(query,index,cur) if _use_buffered else None;
-            if not results_title:
-                results_title = client.search(index=index,query=query)['hits']['hits'];
-                store(query,results_title,index,cur);
-                ##print('title:',time.time()-t,len(query['match']['title'])); t = time.time();print(query)
-            best_results_title  = [(results_title[ 0]['_score'],results_title[ 0]['_source'],)] if results_title  else [];
-            log([results_title],OUT);
+                results_title      = client.search(index=index,query=query,size=5,_source=sourcefields)
+                results_title,took = results_title['hits']['hits'], results_title['took'];
+                store(query,results_title,index,cur); # This requires no significant time
+                log(['title:',took,time.time()-t,len(query['match']['title'])],OUT); t = time.time();
+            best_results_title  = [(result_title['_score'],result_title['_source'],) for result_title in results_title];
             ID, match_obj       = get_best_match(refobjects[i],best_results_title ,'title'    ,query['match']['title'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_title  and not ID else [ID,match_obj];
+            log(results_title,OUT);
         if 'reference' in refobjects[i] and refobjects[i]['reference']:
-            query                         = copy(query_refstring);
-            #query['multi_match']['query'] = refobjects[i]['reference'][:_max_val_len];
-            query['match']['refstr'] = refobjects[i]['reference'][:_max_val_len];  log([query],OUT);#TODO: Change to this after refstr is available!
-            results_refstr                = lookup(query,index,cur) if _use_buffered else None;
+            query                    = copy(query_refstring);
+            query['match']['refstr'] = refobjects[i]['reference'][:_max_val_len]; log([query],OUT);
+            results_refstr           = lookup(query,index,cur) if _use_buffered else None;
             if not results_refstr:
-                results_refstr = client.search(index=index,query=query)['hits']['hits'];
-                store(query,results_refstr,index,cur);
-                #print('reference:',time.time()-t,len(query['multi_match']['query'])); t = time.time();print(query)
-                ##print('reference:',time.time()-t,len(query['match']['refstr'])); t = time.time();print(query)
-            log([results_refstr],OUT);
-            best_results_refstr = [(results_refstr[0]['_score'],results_refstr[0]['_source'],)] if results_refstr else [];
-            #ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['multi_match']['query'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
+                results_refstr      = client.search(index=index,query=query,size=5,_source=sourcefields)
+                results_refstr,took = results_refstr['hits']['hits'], results_refstr['took'];
+                store(query,results_refstr,index,cur); # This requires no significant time
+                log(['reference:',took,time.time()-t,len(query['match']['refstr'])],OUT); t = time.time();
+            best_results_refstr = [(result_refstr['_score'],result_refstr['_source'],) for result_refstr in results_refstr];
             ID, match_obj       = get_best_match(refobjects[i],best_results_refstr,'reference',query['match']['refstr'],great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT) if best_results_refstr and not ID else [ID,match_obj];
-#        if (not (query_doi and 'doi' in refobjects[i] and refobjects[i]['doi'])) and (not ('title' in refobjects[i] and refobjects[i]['title'])) and (not ('reference' in refobjects[i] and refobjects[i]['reference'])):
-#            print('Neither title nor refstr in refobject!');
-#            continue;
+            log(results_refstr,OUT);
         if ID != None:
             refobjects[i][field[:-1]] = ID;
             ids.append(ID);
