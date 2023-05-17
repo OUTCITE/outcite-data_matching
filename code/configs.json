@@ -96,5 +96,7 @@
     "recheck_research_data": false,
     "recheck_econbiz":       false,
 
-    "use_buffered": true
+    "use_buffered": true,
+
+    "date_weight": 100
 }

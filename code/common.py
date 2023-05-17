@@ -26,6 +26,7 @@ _max_scroll_tries = _configs["max_scroll_tries"];
 _scroll_size      = _configs["scroll_size"];
 _max_val_len      = _configs["max_val_len"];
 _use_buffered     = _configs["use_buffered"];
+_dateweight       = _configs["date_weight"];
 #'''
 _refobjs = _configs["refobjs"];
 
@@ -322,7 +323,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
         refobj_   = {key:refobj  [key] if key!='authors' else [{'author_string':[part for part in NAMESEP.split(author['author_string']) if part]} for author in refobj  ['authors'] if 'author_string' in author and author['author_string']] for key in refobj   if refobj  [key] not in [None,'None',' ',''] };
         prec, rec, tp, p, t, matches, mismatches, mapping, costs = compare_refobject(matchobj_,refobj_,threshold);
         #matchprec                                                = len(matches)/(len(matches)+len(mismatches)) if len(matches)+len(mismatches) > 0 else 0;
-        matchprec                                                = sum([min(len(a),len(b)) if key!='_year' else 100 for key,a,b in matches])/(sum([min(len(a),len(b)) if key!='_year' else 100 for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else 100 for key,a,b in mismatches])) if sum([min(len(a),len(b)) if key!='_year' else 100 for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else 100 for key,a,b in mismatches]) > 0 else 0;
+        matchprec                                                = sum([min(len(a),len(b)) if key!='_year' else _dateweight for key,a,b in matches])/(sum([min(len(a),len(b)) if key!='_year' else _dateweight for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else _dateweight for key,a,b in mismatches])) if sum([min(len(a),len(b)) if key!='_year' else _dateweight for key,a,b in matches])+sum([min(len(a),len(b)) if key!='_year' else _dateweight for key,a,b in mismatches]) > 0 else 0;
         if len(matches)+len(mismatches) > 0:
             log(['Matchprec:',matchprec,'Precision:',prec,'Recall:',rec,'\n___________________________________'],OUT);
             log(['Matches:   ',matches],OUT);
