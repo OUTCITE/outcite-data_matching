@@ -37,7 +37,7 @@ _ids     = _configs["ids"];#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar
 YEAR      = re.compile(r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'); #1500--2023
 NAMESEP   = re.compile(r'\W');
 GARBAGE   = re.compile(r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)');
-SOURCEKEY = re.compile(r"source\['[A-Za-z|_]+[1-9|A-Za-z|_]*'\]");
+SOURCEKEY = re.compile(r"source\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\]");
 
 def log(strings,OUT):
     OUT.write(' '.join([str(string) for string in strings])+'\n');
