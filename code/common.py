@@ -232,7 +232,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
             log(['Matchprec:',matchprec,'Precision:',prec,'Recall:',rec,'\n___________________________________'],OUT);
             log(['Matches:   ',matches],OUT);
             log(['Mismatches:',mismatches,'\n___________________________________'],OUT);
-        title = source['title'][0] if isinstance(source['title'],list) and len(source['title'])>0 else '' if isinstance(source['title'],list) else source['title'];
+        title = None if not 'title' in source else source['title'][0] if isinstance(source['title'],list) and len(source['title'])>0 else '' if isinstance(source['title'],list) else source['title'];
         if score > great_score[query_field=='title']:
             log(['PASSED '+query_field.upper()+'-query: score',score,'>',great_score[query_field=='title']],OUT);
             if matchprec >= thr_prec and len(matches)>1 and id_field in source:
