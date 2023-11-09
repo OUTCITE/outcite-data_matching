@@ -31,6 +31,8 @@ _dateweight       = _configs["date_weight"];
 _refobjs = _configs["refobjs"];
 
 _ids     = _configs["ids"];#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar-55603","gesis-ssoar-37157","gesis-ssoar-5917","gesis-ssoar-21970"];#None
+
+LOG = False;
 #'''
 #_refobjs = [ 'anystyle_references_from_gold_refstrings' ];
 
@@ -40,7 +42,8 @@ GARBAGE   = re.compile(r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)');
 SOURCEKEY = re.compile(r"source\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\]");
 
 def log(strings,OUT):
-    OUT.write(' '.join([str(string) for string in strings])+'\n');
+    if LOG:
+        OUT.write(' '.join([str(string) for string in strings])+'\n');
 
 def lookup(query,table,cur):
     rows = cur.execute("SELECT result FROM "+table+" WHERE query=?",(json.dumps(query),)).fetchall();
@@ -220,6 +223,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
     log(['=QUERY===============================================================================\n'+query_field.upper()+': '+query_val+'\n====================================================================================='],OUT);
     for score,source in results: # This will still return the first matching result, but if the ranking order is not so good, then a later one also has a chance
         matchobj = transform(source,transformap);
+        print('------------->',matchobj)
         log(['=MATCH===============================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj])],OUT);
         #matchobj_ = {key:matchobj[key] if key!='authors' else [name_part for author in matchobj['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in matchobj};
         #refobj_   = {key:refobj  [key] if key!='authors' else [name_part for author in refobj  ['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in refobj  };
@@ -254,13 +258,15 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
     return (None,None);
 
 def make_refs(matched_refs,index_m):
+    for key in matched_refs:
+        print('###########>',matched_refs[key]);
     refobjects = [];
     for match_id in matched_refs:
         new_ref = {index_m+'_id':match_id};
         for field in matched_refs[match_id]:
-            if field not in ['authors','publishers','editors'] and isinstance(matched_refs[match_id][field],list) and len(matched_refs[match_id][field])>0:
+            if index_m!='crossref' and field not in ['authors','publishers','editors'] and isinstance(matched_refs[match_id][field],list) and len(matched_refs[match_id][field])>0:
                 new_ref[field] = matched_refs[match_id][field][0];
-            elif field in ['authors','publishers','editors']:
+            elif index_m!='crossref' and field in ['authors','publishers','editors']: #TODO: Why the second part? Added the first one for now...
                 new_objs = [];
                 if not isinstance(matched_refs[match_id][field],list):
                     matched_refs[match_id][field] = [matched_refs[match_id][field]];
@@ -277,6 +283,8 @@ def make_refs(matched_refs,index_m):
             elif matched_refs[match_id][field]:
                 new_ref[field] = matched_refs[match_id][field];
         refobjects.append(new_ref);
+    for refobject in refobjects:
+        print('============>',refobject);
     return refobjects;
 
 def find(refobjects,client,index,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur):

@@ -38,7 +38,7 @@ _to_field   = 'crossref_ids';
 
 _transformap =  [ ('reference',    "source['refstr']"),
                   ('year',         "int(source['published-print']['date-parts'][0][0])"),
-                  ('authors',      "[{'firstnames': [source['author'][i]['given']],'surname': source['author'][i]['family']} for i in range(len(source['author']))]"),
+                  ('authors',      "[{'author_string':source['author'][i]['given']+' '+source['author'][i]['family'],'firstnames': [part for part in source['author'][i]['given'].split() if len(part)>1 and not part.endswith('.')],'initials':[part[0] for part in source['author'][i]['given'].split()],'surname': source['author'][i]['family']} for i in range(len(source['author']))]"),
                   ('publishers',   "[{'publisher_string': source['publisher']}]"),
                   ('title',        "source['title'][0]"),
                   ('issue',        "int(source['issue'])"),
