@@ -1,0 +1,21 @@
+![data_matching](uploads/de00aca162e2069eff5524e242c50a65/data_matching.png)
+
+Tries to find matches for extracted (and parsed) references to the target collections stored locally as the OUTCITE target Elasticsearch indices. This involves first issuing different Elasticsearch queries (currently doi-match, title-match, and refstring-match) as well as a following feature-by-feature matching procedure that filters out non-matching results returned by Elasticsearch.
+
+1. Matching to SSOAR: **python code/[update_ssoar.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_ssoar.py "update_ssoar.py") \<ssoar_outcite\>**
+
+2. Matching to GESIS BIB: **python code/[update_gesis_bib.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_gesis_bib.py "update_gesis_bib.py") \<ssoar_outcite\>**
+
+3. Matching to GESIS Datasets: **python code/[update_research_data.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_research_data.py "update_research_data.py") \<ssoar_outcite\>**
+
+4. Matching to Sowiport: **python code/[update_sowiport.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_sowiport.py "update_sowiport.py") \<ssoar_outcite\>**
+
+5. Matching to Econbiz: **python code/[update_econbiz.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_econbiz.py "update_econbiz.py") \<ssoar_outcite\>**
+
+6. Matching to DNB: **python code/[update_dnb.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_dnb.py "update_dnb.py") \<ssoar_outcite\>**
+
+7. Matching to Crossref: **python code/[update_crossref.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_crossref.py "update_crossref.py") \<ssoar_outcite\>**
+
+8. Matching to Arxiv: **python code/[update_arxiv.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_arxiv.py "update_arxiv.py") \<ssoar_outcite\>**
+
+9. Matching to Openalex: **python code/[update_openalex.py](https://git.gesis.org/backests/data_matching/-/blob/main/code/update_openalex.py "update_openalex.py") \<ssoar_outcite\>**

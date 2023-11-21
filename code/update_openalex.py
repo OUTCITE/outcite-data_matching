@@ -48,7 +48,7 @@ _transformap = [ ('reference',     "source['refstr']"),
                  ('type',          "source['type']"),
                  ('source',        "source['host_venue']['display_name']") ];
 
-_query_fields = ['title','authorships.author.display_name','host_venue','doi'];
+_query_fields = _configs['openalex_query_fields'];#['title','authorships.author.display_name','host_venue','doi'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------

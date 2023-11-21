@@ -18,8 +18,8 @@ except:
 _configs = json.load(IN);
 IN.close();
 
-_logfile  = 'matching.log';
-_bufferdb = 'queries.db';
+_logfile  = _configs['logfile'];    #'matching.log';
+_bufferdb = _configs['buffer_db'];  #'queries.db';
 
 _max_extract_time = _configs["max_extract_time"];
 _max_scroll_tries = _configs["max_scroll_tries"];
@@ -32,14 +32,14 @@ _refobjs = _configs["refobjs"];
 
 _ids     = _configs["ids"];#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar-55603","gesis-ssoar-37157","gesis-ssoar-5917","gesis-ssoar-21970"];#None
 
-LOG = False;
+LOG = _configs['do_log'];#False;
 #'''
 #_refobjs = [ 'anystyle_references_from_gold_refstrings' ];
 
-YEAR      = re.compile(r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'); #1500--2023
-NAMESEP   = re.compile(r'\W');
-GARBAGE   = re.compile(r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)');
-SOURCEKEY = re.compile(r"source\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\]");
+YEAR      = re.compile(_configs['regex_year']);#r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'; #1500--2023
+NAMESEP   = re.compile(_configs['regex_namesep']);#r'\W';
+GARBAGE   = re.compile(_configs['regex_garbage']);#r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)';
+SOURCEKEY = re.compile(_configs['regex_sourcekey']);#r"source\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\]";
 
 def log(strings,OUT):
     if LOG:

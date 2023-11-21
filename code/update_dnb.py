@@ -41,7 +41,7 @@ _transformap = [ ('reference',  "source['refstr']"),
                  ('title',      "source['title']"),
                  ('publishers', "[{'publisher_string': source['publishers'][i]} for i in range(len(source['publishers']))]") ];
 
-_query_fields = ['title','authors','titles','publishers','editors'];
+_query_fields = _configs['dnb_query_fields'];#['title','authors','titles','publishers','editors'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------

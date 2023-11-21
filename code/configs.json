@@ -98,5 +98,22 @@
 
     "use_buffered": true,
 
-    "date_weight": 100
+    "date_weight": 100,
+
+    "logfile": "matching.log",
+    "buffer_db": "queries.db",
+    "do_log": false,
+    "regex_year": "1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])",
+    "regex_namesep": "\\W",
+    "regex_garbage": "\\W",
+    "regex_sourcekey": "source\\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\\]",
+
+    "ssoar_query_fields":         ["title","authors.name","doi"],
+    "sowiport_query_fields":      ["title","coreAuthor","coreJournalTitle","institutions","corePublisher"],
+    "research_data_query_fields": ["title","person","source","publisher","doi"],
+    "openalex_query_fields":      ["title","authorships.author.display_name","host_venue","doi"],
+    "gesis_bib_query_fields":     ["title","coreAuthor","source"],
+    "econbiz_query_fields":       ["title","authors","publishers","doi"],
+    "dnb_query_fields":           ["title","authors","titles","publishers","editors"]
+
 }

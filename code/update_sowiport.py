@@ -47,7 +47,7 @@ _transformap = [ ('reference',     "source['refstr']"),
                  ('doi',           "source['doi'][0]"),
                  ('source',        "source['coreJournalTitle']") ];
 
-_query_fields = ['title','coreAuthor','coreJournalTitle','institutions','corePublisher'];
+_query_fields = _configs['sowiport_query_fields'];#['title','coreAuthor','coreJournalTitle','institutions','corePublisher'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------
