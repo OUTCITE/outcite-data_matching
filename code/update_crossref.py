@@ -9,8 +9,11 @@ from common import *
 from pathlib import Path
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
-_index            = sys.argv[1]; #'geocite' #'ssoar'
 
+# THE INDEX TO UPDATE THE REFERENCES IN
+_index = sys.argv[1];
+
+# LOADING THE CONFIGS CUSTOM IF AVAILABLE OTHERWISE THE DEFAULT CONFIGS FILE
 IN = None;
 try:
     IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
@@ -19,23 +22,31 @@ except:
 _configs = json.load(IN);
 IN.close();
 
+# PARAMETERS FOR THE BULK UPDATING ELASTICSEARCH PROCESS
 _chunk_size       = _configs['chunk_size_crossref'];
 _request_timeout  = _configs['requestimeout_crossref'];
 
+# IF MATCHING SCORE IS ABOVE THIS THEN DIRECTLY A MATCH OF THE METAOBJ AND THE REFOBJ
 _great_score  = _configs['great_score_crossref'];
+# IF MATCHING SCORE IS ABOVE THIS THEN MAY BE A MATCH CONDITIONED ON FURTHER CHECK
 _ok_score     = _configs['ok_score_crossref'];
+# VARIOUS THRESHOLDS USED TO MATCH THE METAOBJ AND THE REFOBJ
 _max_rel_diff = _configs['max_rel_diff_crossref'];
 _threshold    = _configs['threshold_crossref'];
 _thr_prec     = _configs['thr_prec_crossref'];
 
+# WETHER TO REDO THE MATCHING FOR DOCUMENTS THAT HAVE ALREADY BEEN LABELLED AS PROCESSED FOR THIS STEP BEFORE
 _recheck = _configs['recheck_crossref'];
 
 #====================================================================================
+# NAME OF THE ELASTICSEARCH INDEX TO MATCH AGAINST
 _index_m    = 'crossref';
+# FIELD NAME IN THE TARGET INDEX WHICH STORES THE ID TO KEEP AS REALIZATION OF THE MATCHING
 _from_field = 'DOI';
+# WHERE TO ADD THE ID FROM THE ABOVE TARGET INDEX FIELD
 _to_field   = 'crossref_ids';
 
-
+# TO SEE IF THE REFOBJ AND THE TARGET METAOBJ MATCH EVALUATE THE RHS IN THE METAOBJ AND COMPARE TO THE LHS FIELD IN THE REFOBJ
 _transformap =  [ ('reference',    "source['refstr']"),
                   ('year',         "int(source['published-print']['date-parts'][0][0])"),
                   ('authors',      "[{'author_string':source['author'][i]['given']+' '+source['author'][i]['family'],'firstnames': [part for part in source['author'][i]['given'].split() if len(part)>1 and not part.endswith('.')],'initials':[part[0] for part in source['author'][i]['given'].split()],'surname': source['author'][i]['family']} for i in range(len(source['author']))]"),
@@ -46,13 +57,16 @@ _transformap =  [ ('reference',    "source['refstr']"),
                   ('doi',          "source['DOI']"),
                   ('type',         "source['type']") ];
 
+# WHICH FIELDS TO CONSIDER FOR MULTI-MATCH QUERY (NOT CURRENTLY USED)
 _query_fields = ['title','author','publisher','doi'];
 #====================================================================================
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-SCRIPT------------------------------------------------------------------------------------------------------------------------------------------
 
-_client = ES(['http://localhost:9200'],timeout=60);#ES(['localhost'],scheme='http',port=9200,timeout=60);
+# CONNECTION TO THE LOCAL ELASTICSEARCH INSTANCE WHERE THE INDEX IS
+_client = ES(['http://localhost:9200'],timeout=60);
 
+# BATCH UPDATING THE LOCAL DOCUMENTS INDEX WITH THE MATCHES
 i = 0;
 for success, info in bulk(_client,search(_to_field,_from_field,_query_fields,_index,_index_m,_great_score,_ok_score,_thr_prec,_max_rel_diff,_threshold,_transformap,_recheck),chunk_size=_chunk_size, request_timeout=_request_timeout):
     i += 1;

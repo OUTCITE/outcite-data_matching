@@ -1,3 +1,4 @@
+#-IMPORTS-----------------------------------------------------------------------------------------------------------------------------------------
 import numpy as np
 from scipy.optimize import linear_sum_assignment as LSA
 from difflib import SequenceMatcher as SM
@@ -9,7 +10,10 @@ import sys
 import json
 import sqlite3
 from pathlib import Path
+#-------------------------------------------------------------------------------------------------------------------------------------------------
+#-GLOBAL OBJECTS----------------------------------------------------------------------------------------------------------------------------------
 
+# LOADING THE CONFIGS CUSTOM IF AVAILABLE OTHERWISE THE DEFAULT CONFIGS FILE
 IN = None;
 try:
     IN = open(str((Path(__file__).parent / '../code/').resolve())+'/configs_custom.json');
@@ -18,42 +22,57 @@ except:
 _configs = json.load(IN);
 IN.close();
 
+# WHERE TO LOG TO AND WHERE TO BUFFER MATCHES TO
 _logfile  = _configs['logfile'];    #'matching.log';
 _bufferdb = _configs['buffer_db'];  #'queries.db';
 
+# PARAMETERS FOR SCROLLING OVER THE DOCUMENTS INDEX
 _max_extract_time = _configs["max_extract_time"];
 _max_scroll_tries = _configs["max_scroll_tries"];
 _scroll_size      = _configs["scroll_size"];
-_max_val_len      = _configs["max_val_len"];
-_use_buffered     = _configs["use_buffered"];
-_dateweight       = _configs["date_weight"];
-#'''
+
+# MAXIMUM LENGTH TO CUT OFF LONG QUERY TERMS
+_max_val_len  = _configs["max_val_len"];
+# WHETHER TO USE THE BUFFERED MATCHES OR RECOMPUTE
+_use_buffered = _configs["use_buffered"];
+# THE WEIGHT THAT IS PUT ON A MATCHING DATE WHEN MATCHING THE REFOBJ AND THE METAOBJ
+_dateweight   = _configs["date_weight"];
+
+# WHICH TOOLCHAINS TO RUN THE SCRIPT ON
 _refobjs = _configs["refobjs"];
 
-_ids     = _configs["ids"];#['GaS_2000_0001'];#["gesis-ssoar-29359","gesis-ssoar-55603","gesis-ssoar-37157","gesis-ssoar-5917","gesis-ssoar-21970"];#None
+# IF THE CODE SHOULD ONLY BE APPLIED TO A SUBSET OF DOCUMENTS THEN SPECIFY THEIR IDS
+_ids     = _configs["ids"];
 
-LOG = _configs['do_log'];#False;
-#'''
-#_refobjs = [ 'anystyle_references_from_gold_refstrings' ];
+#WHETHER TO LOG TO ABOVE FILE OR NOT
+LOG = _configs['do_log'];
 
+# REGULAR EXPRESSIONS USED
 YEAR      = re.compile(_configs['regex_year']);#r'1[5-9][0-9]{2}|20(0[0-9]|1[0-9]|2[0-3])'; #1500--2023
 NAMESEP   = re.compile(_configs['regex_namesep']);#r'\W';
 GARBAGE   = re.compile(_configs['regex_garbage']);#r'\W')#re.compile(r'[\x00-\x1f\x7f-\x9f]|(-\s+)';
 SOURCEKEY = re.compile(_configs['regex_sourcekey']);#r"source\['[A-Za-z|_|-]+[1-9|A-Za-z|_|-]*'\]";
 
+#-------------------------------------------------------------------------------------------------------------------------------------------------
+#-FUNCTIONS---------------------------------------------------------------------------------------------------------------------------------------
+
+# LOGGING TO FILE
 def log(strings,OUT):
     if LOG:
         OUT.write(' '.join([str(string) for string in strings])+'\n');
 
+# LOOKING UP THE MATCHES FROM THE MATCH BUFFER DATABASE
 def lookup(query,table,cur):
     rows = cur.execute("SELECT result FROM "+table+" WHERE query=?",(json.dumps(query),)).fetchall();
     if rows:
         return json.loads(rows[0][0]);
     return None;
 
+# STORING A MATCH IN THE MATCH BUFFER DATABASE
 def store(query,result,table,cur):
     cur.execute("INSERT OR REPLACE INTO "+table+" VALUES(?,?)",(json.dumps(query),json.dumps(result),));
 
+# HELPER FUNCTION TO RETURN OBJECTS AT GIVEN PATH IN DICTIONARY STRUCTURE
 def walk_down(pointer,match_keys):
     if len(match_keys)==0:
         yield pointer;
@@ -66,12 +85,14 @@ def walk_down(pointer,match_keys):
             for el in walk_down(el_p,match_keys):
                 yield el;
 
+# HELPER FUNCTION TO GET FIRST ELEMENT IN NESTED LIST
 def extract(L):
     L_ = L[0] if len(L)>0 else None;
     if isinstance(L_,list):
         return extract(L_);
     return L_;
 
+# HELPER FUNCTION TO MERGE TWO DOCTIONARY STRUCTURES WITH SOME DEFINED OPERATIONS FOR PRIMITIVES
 def merge(d, u):
     for k, v in u.items():
         if v == None:                                   # discard None values
@@ -90,6 +111,7 @@ def merge(d, u):
             d[k] = v;
     return d;
 
+# HELPER FUNCTION TO REMOVE EMPTY DICTIONARIES FROM DICTIONARY STRUCTURE
 def remove_empty(data):
     new_data = {}
     for k, v in data.items():
@@ -99,6 +121,7 @@ def remove_empty(data):
             new_data[k] = v
     return new_data
 
+# APPLY THE CODE TO EVALUATE FROM THE TRANSFORMAP TO OBTAIN METAOBJ IN OUTCITE COMMON DATA MODEL
 def transform(source,transformap):
     target = dict();
     for target_key, source_str in transformap:
@@ -113,12 +136,14 @@ def transform(source,transformap):
             target[target_key] = source_val;
     return target;
 
+# SOME DISTANCE MEASURE FOR TWO STRINGS
 def distance(a,b):
     a,b        = a.lower(), b.lower();
     s          = SM(None,a,b);
     overlap    = sum([block.size for block in s.get_matching_blocks()]);
     return 1-(overlap / max([len(a),len(b)]));
 
+# SOME DISTANCE MEASURE FOR TWO STRINGS
 def distance_2(a,b):
     a,b      = a.lower(), b.lower();
     s        = SM(None,a,b);
@@ -126,6 +151,7 @@ def distance_2(a,b):
     dist     = max([len(a),len(b)]) - overlap;
     return dist;
 
+# SOME DISTANCE MEASURE FOR TWO STRINGS
 def distance_3(a,b):
     a,b        = '_'+re.sub(GARBAGE,'',a.lower()),'_'+re.sub(GARBAGE,'',b.lower());#a.lower(), b.lower();
     s          = SM(None,a,b);
@@ -133,6 +159,7 @@ def distance_3(a,b):
     dist       = min([len(a),len(b)])**1-overlap;
     return dist;
 
+# HELPER FUNCTION TO FLATTEN A DICTIONARY STRUCTURE
 def flatten(d, parent_key='', sep='_'):
     items = [];
     for k, v in d.items():
@@ -142,6 +169,7 @@ def flatten(d, parent_key='', sep='_'):
         else:
             items.append((new_key, v));
     return dict(items);
+
 
 def pairfy(d, parent_key='', sep='_'): # To be applied after flatten!
     for key in d:
@@ -163,8 +191,7 @@ def dictfy(pairs):
         d[attr].append(val);
     return d;
 
-def assign(A,B): # Two lists of strings
-    #print(A); print(B); print('---------------------------------------------------------');
+def assign(A,B):
     M          = np.array([[distance_3(a,b) if isinstance(a,str) and isinstance(b,str) else a!=b for b in B] for a in A]);
     rows, cols = LSA(M);
     mapping    = [pair for pair in zip(rows,cols)];
@@ -179,6 +206,7 @@ def similar_enough(a,b,cost,threshold):
         return cost / min([len(a),len(b)])**1 < threshold;#max and not **1
     return a == b;
 
+# COMPARING REFERENCE STRINGS LIKE IN EVALUATION SCENARIO
 def compare_refstrings(P_strings,T_strings,threshold): # Two lists of strings
     mapping,costs = assign(P_strings,T_strings);
     pairs         = [(P_strings[i],T_strings[j],) for i,j in mapping];
@@ -188,6 +216,7 @@ def compare_refstrings(P_strings,T_strings,threshold): # Two lists of strings
     recall        = len(matches) / len(T_strings);
     return precision, recall, len(matches), len(P_strings), len(T_strings), matches, mismatches, mapping, costs;
 
+# COMPARING REFERENCE OBJECTS LIKE IN EVALUATION SCENARIO
 def compare_refobject(P_dict,T_dict,threshold):                       # Two dicts that have already been matched based on refstring attribute
     P_pairs     = pairfy(flatten(P_dict));                            # All attribute-value pairs from the output dict
     T_pairs     = pairfy(flatten(T_dict));                            # All attribute-value pairs from the gold   dict
@@ -212,6 +241,7 @@ def compare_refobject(P_dict,T_dict,threshold):                       # Two dict
         costs                                                          += [(TP_key,cost_,)                     for cost_                      in costs_      ];
     return TP/P, TP/T, TP, P, T, matches, mismatches, mapping, costs;
 
+# GETTING THE BEST MATCHING METAOBJ RETURNED BY ELASTICSEARCH IF ANY
 def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT):
     #TITLE = True if 'title' in refobj and refobj['title'] else False;
     #query_val = refobj[query_field];
@@ -257,6 +287,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
             log(['FAILED: score',score,'<=',ok_score[query_field=='title'],'and/or distance',distance(query_val,title),'>=',max_rel_diff[query_field=='title'],'and/or did not match'],OUT);
     return (None,None);
 
+# CREATING A GOLD REFERENCE OBJECT BY TRANSLATING THE MATCHED METAOBJ INTO THE COMMON REFERENCE DATAMODEL
 def make_refs(matched_refs,index_m):
     for key in matched_refs:
         print('###########>',matched_refs[key]);
@@ -287,6 +318,7 @@ def make_refs(matched_refs,index_m):
         print('============>',refobject);
     return refobjects;
 
+# THE MAIN SPECIFIC FUNCTION FOR MATCHING THAT SEARCHES FOR MATCHES AND CHECKS THE MATCHING OF THE RETURNED RESULTS TO THE REFOBJS
 def find(refobjects,client,index,field,query_doi,query_title,query_refstring,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,id_field,OUT,cur):
     sourcefields = list(set(['title',id_field]+[match[8:-2] for match in SOURCEKEY.findall(" ".join([fro for to,fro in transformap]))]));
     ids          = [];
@@ -344,6 +376,7 @@ def find(refobjects,client,index,field,query_doi,query_title,query_refstring,gre
                 del refobjects[i][field[:-1]];
     return ids, refobjects, matchobjects;
 
+# THE MAIN FUNCTION SCROLLING OVER THE DOCUMENTS AND ADAPTING THE REFERENCES
 def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_prec,max_rel_diff,threshold,transformap,recheck):
     #----------------------------------------------------------------------------------------------------------------------------------
     OUT = open(index_m+'_'+_logfile,'w');
@@ -420,3 +453,4 @@ def search(field,id_field,query_fields,index,index_m,great_score,ok_score,thr_pr
     client.clear_scroll(scroll_id=sid);
     OUT.close();
     con.close();
+#-------------------------------------------------------------------------------------------------------------------------------------------------
