@@ -253,7 +253,7 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
     log(['=QUERY===============================================================================\n'+query_field.upper()+': '+query_val+'\n====================================================================================='],OUT);
     for score,source in results: # This will still return the first matching result, but if the ranking order is not so good, then a later one also has a chance
         matchobj = transform(source,transformap);
-        print('------------->',matchobj)
+        #print('------------->',matchobj)
         log(['=MATCH===============================================================================\n'+'\n'.join([key+':    '+str(matchobj[key]) for key in matchobj])],OUT);
         #matchobj_ = {key:matchobj[key] if key!='authors' else [name_part for author in matchobj['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in matchobj};
         #refobj_   = {key:refobj  [key] if key!='authors' else [name_part for author in refobj  ['authors'] for name_part in [[],NAMESEP.split(author['author_string'])]['author_string' in author and author['author_string']]] for key in refobj  };
@@ -289,8 +289,8 @@ def get_best_match(refobj,results,query_field,query_val,great_score,ok_score,thr
 
 # CREATING A GOLD REFERENCE OBJECT BY TRANSLATING THE MATCHED METAOBJ INTO THE COMMON REFERENCE DATAMODEL
 def make_refs(matched_refs,index_m):
-    for key in matched_refs:
-        print('###########>',matched_refs[key]);
+    #for key in matched_refs:
+    #   print('###########>',matched_refs[key]);
     refobjects = [];
     for match_id in matched_refs:
         new_ref = {index_m+'_id':match_id};
@@ -314,8 +314,8 @@ def make_refs(matched_refs,index_m):
             elif matched_refs[match_id][field]:
                 new_ref[field] = matched_refs[match_id][field];
         refobjects.append(new_ref);
-    for refobject in refobjects:
-        print('============>',refobject);
+    #for refobject in refobjects:
+    #    print('============>',refobject);
     return refobjects;
 
 # THE MAIN SPECIFIC FUNCTION FOR MATCHING THAT SEARCHES FOR MATCHES AND CHECKS THE MATCHING OF THE RETURNED RESULTS TO THE REFOBJS
