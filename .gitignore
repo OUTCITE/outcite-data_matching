@@ -1,8 +1,8 @@
-logs*/
-*.out
-*.err
-*.db
-*.log
-code/*_old.py
+/logs*/
+/*.out
+/*.err
+/*.db
+/*.log
+/code/*_old.py
 */__pycache__/*
-code/configs_custom.json
+/code/configs_custom.json
